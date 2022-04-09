@@ -3,10 +3,13 @@ square_diff <- function(a,b){
   return((a-b)^2)
 }
 
+KLGauss <- function(mean1, mean2, sigma2){
+  return(sum(square_diff(mean1,mean2))/(2*sigma2))
+}
+
 bisection <- function(fn, a, b, tol = 1e-8) {
   # If the signs of the function at the evaluated points, a and b, stop the function and return message.
   if (fn(a) * fn(b) > 0)
-    #print(fn(a), fn(b))
     stop('signs of f(a) and f(b) are the same')
   p <-  (a + b)/2;
   err = abs(fn(p));
@@ -19,9 +22,9 @@ bisection <- function(fn, a, b, tol = 1e-8) {
 }
 
 kl_inv_sup <- function(Emp, RHS){
-  #print("kl_inv_sup")
   if (Emp==0)
-    Emp=1e-8
+    # will result in numerical issues
+    Emp <- 1e-8
   fn <- function(p) Emp*log(Emp/p) + (1-Emp)*log((1-Emp)/(1-p)) - RHS;
   if (fn(1-1e-8) <= 0)
     return(1-1e-8)
@@ -30,9 +33,9 @@ kl_inv_sup <- function(Emp, RHS){
 }
 
 kl_inv_inf <- function(Emp, RHS){
-  #print("kl_inv_inf")
   if (Emp==0)
-    Emp=1e-8
+    # will result in numerical issues
+    Emp <- 1e-8
   fn <- function(p) Emp*log(Emp/p) + (1-Emp)*log((1-Emp)/(1-p)) - RHS;
   if (fn(1e-8) <= 0)
     return(1e-8)

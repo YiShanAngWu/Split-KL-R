@@ -1,7 +1,31 @@
 # PAC-Bayes Split-kl bound
 
 boundSkl <- function(NMC, sigma2){
-  print(c("Not Yet Implemented."))
+  ERMfull <- ERMs[,3]
+  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
+  
+  # compute loss
+  Lnloss <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
+  
+  # split loss
+  mu <- 0
+  LnlossP <- apply(Lnloss, 1:2, function(x) max(c(0, x-mu)))
+  LnlossM <- apply(Lnloss, 1:2, function(x) max(c(0, mu-x)))
+  
+  # compute complexity term
+  compTerm <- KLGauss(ERMfull, numeric(d), sigma2)
+  RHS <- (compTerm + log(4*sigma2GridSize*sqrt(ntrain)/delta))/ntrain
+  
+  # compute Plus Term
+  PlusLHS <- mean(LnlossP)/(1-mu)
+  PlusTerm <- kl_inv_sup(PlusLHS, RHS)
+  
+  # compute Minus Term
+  MinusLHS <- mean(LnlossM)/(mu+1)
+  MinusTerm <- kl_inv_inf(MinusLHS, RHS)
+  
+  val <- mu + (1-mu)*PlusTerm - (mu+1)*MinusTerm
+  return(list(val=val, compTerm=compTerm, PlusTerm=PlusTerm, MinusTerm=MinusTerm))
 }
 
 boundSkl_IF <- function(NMC, sigma2){
@@ -31,14 +55,13 @@ boundSkl_IF <- function(NMC, sigma2){
                    sigma2 = sigma2)
   RHS <- (compTerm + 2*log(8*sigma2GridSize*sqrt(ntrain/2)/delta))/ntrain
   
-  # compute kl inverse
+  # compute Plus Term
   PlusLHS <- 0.5*mean(DifflossP)/(1-mu)
-  MinusLHS <- 0.5*mean(DifflossM)/(mu+1)
-  #print(c(  "RHS",RHS))
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
+  
+  # compute Minus Term
+  MinusLHS <- 0.5*mean(DifflossM)/(mu+1)
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
-  print(c("P",PlusLHS, "PT", PlusTerm))
-  print(c("M",MinusLHS,"MT", MinusTerm))
   
   # compute reference term
   RefTerm <- bin_inv_sup(ntrain/2, ntrain/2*mean(loss1), delta/4) +  bin_inv_sup(ntrain/2, ntrain/2*mean(loss2), delta/4)

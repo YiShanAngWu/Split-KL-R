@@ -32,10 +32,12 @@ computeExpectation <- function(ERMfull,NMC, sigma2){
 }
 
 COMP <- function(ERMfull,ERM1,ERM2,sigma2){
-  val1 <- sum(square_diff(ERMfull,ERM1))
-  val2 <- sum(square_diff(ERMfull,ERM2))
-
-  result <-   (val1+val2)/(2*sigma2)  
+  #val1 <- sum(square_diff(ERMfull,ERM1))
+  #val2 <- sum(square_diff(ERMfull,ERM2))
+  #result <-   (val1+val2)/(2*sigma2)
+  val1 <- KLGauss(ERMfull, ERM1, sigma2)
+  val2 <- KLGauss(ERMfull, ERM2, sigma2)
+  result <- val1+val2
   return(result)
 }
 

@@ -26,7 +26,7 @@ distribution <- "gaussian"        # No other distribution is supported currently
 lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
-half <-  T                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
+half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
