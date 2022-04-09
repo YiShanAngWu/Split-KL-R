@@ -19,14 +19,15 @@ par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "mushroom"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "haberman"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
 lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
-half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
+#half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
+IF <-  T                          # Set to true so that Informed Prior is used for all methods
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -55,7 +56,7 @@ source(paste(path, "utils.R", sep="/"))
 source(paste(path, "PACBayes2.R", sep="/"))
 source(paste(path, "PACBayes-Others.R", sep="/"))
 source(paste(path, "PACBayesSkl.R", sep="/"))
-str <- paste(c(data_option,"imformedPrior",half),collapse='-')
+str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
 
 # Initializing 
 ifelse(grepl("synthetic",data_option, fixed=TRUE), nbRepet <- 10, nbRepet <- 5)
@@ -131,14 +132,14 @@ for(inb in 1:nb.seq){
       }
       
       ## TS bound
-      ifelse(half,tmpBEB<- boundPBEB_half(NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
+      ifelse(IF,tmpBEB<- boundPBEB_half(NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
       if(Ln + tmpBEB$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- Ln + tmpBEB$val
         VarTS[irepet,inb] <- tmpBEB$VarTS
         bestSigma2[irepet,2,inb] <- sigma2
       }
       ## Maurer bound
-      ifelse(half,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
+      ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
       if(tmpBKL$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBKL$val
         KL[irepet,inb] <-  tmpBKL$KL
@@ -146,14 +147,14 @@ for(inb in 1:nb.seq){
       }
       
       ## Catoni bound
-      ifelse(half, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
+      ifelse(IF, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
       if(tmpBCT$val < bound[irepet,4,inb]){
         bound[irepet,4,inb] <- tmpBCT$val
         bestSigma2[irepet,4,inb] <- sigma2
       }
       
       ## Split-kl bound
-      ifelse(half, tmpSkl <-boundSkl_IF(NMC, sigma2), tmpSkl <-boundSkl(NMC, sigma2))
+      ifelse(IF, tmpSkl <-boundSkl_IF(NMC, sigma2), tmpSkl <-boundSkl(NMC, sigma2))
       if(tmpSkl$val < bound[irepet,5,inb]){
         bound[irepet,5,inb] <-  tmpSkl$val
         bestSigma2[irepet,5,inb] <- sigma2
