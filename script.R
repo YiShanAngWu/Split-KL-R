@@ -16,10 +16,10 @@ library(caret)
 library(R.matlab)
 
 par(mfrow=c(1,1))
-path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\PAC-Bayesian-Un-Expected-Bernstein-Inequality"
+path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "adults"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "mushroom"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
@@ -59,9 +59,9 @@ str <- paste(c(data_option,"imformedPrior",half),collapse='-')
 
 # Initializing 
 ifelse(grepl("synthetic",data_option, fixed=TRUE), nbRepet <- 10, nbRepet <- 5)
-results <- array(dim = c(nbRepet,5,nb.seq), data = Inf)
-bestSigma2 <- array(dim = c(nbRepet,nb.seq), data = Inf)
-LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA)
+bound <- array(dim = c(nbRepet,5,nb.seq), data = Inf)
+Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,5,nb.seq), data = NA) #posterior
+LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
 Vn <- VnPrim  <- VarTS  <- array(dim = c(nbRepet, nb.seq), data = NA)
 comp <- KL <- array(dim = c(nbRepet, nb.seq), data = NA)
 val1 <- val2 <- array(dim = c(nbRepet, nb.seq), data = NA)
@@ -107,62 +107,72 @@ for(inb in 1:nb.seq){
     
     ## Compute ERMs
     ERMs <- buildERMsequenceFast()
+    
+    ## Compute the train/test error of ERMs[,3]
+    LnERMtrain[irepet,inb] <- mean(loss(Ytrain,predictor(Xtrain,ERMs[,3])))
+    LnERMtest[irepet,inb] <- mean(loss(Ytest,predictor(Xtest,ERMs[,3])))
 
     ## Loop over the grid of sigma2 and pick the best one for each method
     for(sigma2 in sigma2Grid){
-      print(c("sigma2", sigma2))
       ## Compute the shared empirical error
       theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3],variance2=sigma2, NMC)
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
       
       ## MGG bound 
       tmpBProb <- mainBoundProba(NMC,sigma2)
-      print(c("comp", tmpBProb$compTerm))
-      if(Ln + tmpBProb$val < results[irepet,1,inb]){
-        results[irepet,1,inb] <- Ln + tmpBProb$val
+      if(Ln + tmpBProb$val < bound[irepet,1,inb]){
+        bound[irepet,1,inb] <- Ln + tmpBProb$val
         Vn[irepet,inb] <- tmpBProb$vnTerm
         VnPrim[irepet,inb] <- tmpBProb$vnTermPrim
         comp[irepet,inb] <- tmpBProb$compTerm
         val1[irepet,inb] <- tmpBProb$val1
         val2[irepet,inb] <- tmpBProb$val2
-        bestSigma2[irepet,inb] <- sigma2
+        bestSigma2[irepet,1,inb] <- sigma2
       }
       
       ## TS bound
       ifelse(half,tmpBEB<- boundPBEB_half(NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
-      if(Ln + tmpBEB$val < results[irepet,2,inb]){
-        results[irepet,2,inb] <- Ln + tmpBEB$val
+      if(Ln + tmpBEB$val < bound[irepet,2,inb]){
+        bound[irepet,2,inb] <- Ln + tmpBEB$val
         VarTS[irepet,inb] <- tmpBEB$VarTS
+        bestSigma2[irepet,2,inb] <- sigma2
       }
       ## Maurer bound
       ifelse(half,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
-      if(tmpBKL$val < results[irepet,3,inb]){
-        results[irepet,3,inb] <-  tmpBKL$val
+      if(tmpBKL$val < bound[irepet,3,inb]){
+        bound[irepet,3,inb] <-  tmpBKL$val
         KL[irepet,inb] <-  tmpBKL$KL
+        bestSigma2[irepet,3,inb] <- sigma2
       }
       
       ## Catoni bound
       ifelse(half, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
-      if(tmpBCT$val < results[irepet,4,inb]){
-        results[irepet,4,inb] <- tmpBCT$val
+      if(tmpBCT$val < bound[irepet,4,inb]){
+        bound[irepet,4,inb] <- tmpBCT$val
+        bestSigma2[irepet,4,inb] <- sigma2
       }
       
       ## Split-kl bound
       ifelse(half, tmpSkl <-boundSkl_IF(NMC, sigma2), tmpSkl <-boundSkl(NMC, sigma2))
-      if(tmpSkl$val < results[irepet,5,inb]){
-        results[irepet,5,inb] <-  tmpSkl$val
+      if(tmpSkl$val < bound[irepet,5,inb]){
+        bound[irepet,5,inb] <-  tmpSkl$val
+        bestSigma2[irepet,5,inb] <- sigma2
       }
-      
-      LnERMtrain[irepet,inb] <- mean(loss(Ytrain,predictor(Xtrain,ERMs[,3])))
-      LnERMtest[irepet,inb] <- mean(loss(Ytest,predictor(Xtest,ERMs[,3])))
+    }
+    for(mtd in 1:5){
+      theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3],variance2=bestSigma2[irepet,mtd,inb], NMC)
+      Lntrain[irepet,mtd,inb] <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
+      Lntest[irepet,mtd,inb] <- mean(loss(Ytest,predictor(Xtest,theta_samplesTS)))
     }
   }
   setTxtProgressBar(pb, inb)
   if(!grepl("synthetic",data_option, fixed=TRUE)){
-    results <- results[,,1]
-    bestSigma2 <- bestSigma2[,1]
+    bound <- bound[,,1]
+    bestSigma2 <- bestSigma2[,,1]
     LnERMtrain <- LnERMtrain[,1]
     LnERMtest <- LnERMtest[,1]
+    Lntrain <- Lntrain[,,1]
+    Lntest <- Lntest[,,1]
     Vn <- Vn[,1]
     VnPrim <- VnPrim[,1]
     VarTS <- VarTS[,1]
@@ -176,27 +186,34 @@ for(inb in 1:nb.seq){
 str <- paste(c(str,d),collapse="-")
 
 if(!grepl("synthetic",data_option, fixed=TRUE)){
-  means <- apply(results, 2, mean)
-  print(paste(c(data_option, ". Our Bound=",  round(means[1],3),
-              ", Maurer bound=", round(means[3],3),
-             ", TS bound=", round(means[2],3), 
-             ", Catoni bound=", round(means[4],3),
-             ", SplitKL bound=", round(means[5],3)),collapse = ""))
-  print(paste(c("ERM test error=", mean(LnERMtest)),collapse=""))
+  meansbound <- apply(bound, 2, mean)
+  meanstest <- apply(Lntest, 2, mean)
+  print(paste(c(data_option, ". ERM test error=", mean(LnERMtest)),collapse=""))
+  print(paste(c("MGG Bound=",  round(meansbound[1],3),
+              ", Maurer bound=", round(meansbound[3],3),
+             ", TS bound=", round(meansbound[2],3), 
+             ", Catoni bound=", round(meansbound[4],3),
+             ", SplitKL bound=", round(meansbound[5],3)),collapse = ""))
+  print(paste(c("MGG test=",  round(meanstest[1],3),
+                ", Maurer test=", round(meanstest[3],3),
+                ", TS test=", round(meanstest[2],3), 
+                ", Catoni test=", round(meanstest[4],3),
+                ", SplitKL test=", round(meanstest[5],3)),collapse = ""))
   
-  print(paste(c(round(mean(LnERMtest),3), " & ",  round(means[1],3),
-                " & ", round(means[3],3),
-                " & ",round(means[2],3), 
-                " & ", round(means[4],3),
-                " & ", round(means[5],3)), collapse = ""))
+#  print(paste(c(round(mean(LnERMtest),3), " & ",  round(meansbound[1],3),
+#                " & ", round(meansbound[3],3),
+#                " & ",round(meansbound[2],3), 
+#                " & ", round(meansbound[4],3),
+#                " & ", round(meansbound[5],3)), collapse = ""))
 }else{
-  MeanBProb <- apply(X = results[,1,], MARGIN = 2, FUN = mean)
-  MeanBTS <- apply(X = results[,2,], MARGIN = 2, FUN = mean)
-  MeanBKL <- apply(X = results[,3,], MARGIN = 2, FUN = mean)
-  MeanBCatoni <- apply(X = results[,4,], MARGIN = 2, FUN = mean)
+  MeanBProb <- apply(X = bound[,1,], MARGIN = 2, FUN = mean)
+  MeanBTS <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)
+  MeanBKL <- apply(X = bound[,3,], MARGIN = 2, FUN = mean)
+  MeanBCatoni <- apply(X = bound[,4,], MARGIN = 2, FUN = mean)
+  MeanBSkl <- apply(X = bound[,5,], MARGIN = 2, FUN = mean)
   
-  ## Saving results 
-  writeMat(paste(c(path, "/save/results_",str,".mat"), collapse = ""), labpcexport = results)
+  ## Saving bound 
+  writeMat(paste(c(path, "/save/results_",str,".mat"), collapse = ""), labpcexport = bound)
   writeMat(paste(c(path, "/save/Vn_",str,".mat"), collapse = ""), labpcexport = Vn)
   writeMat(paste(c(path, "/save/VnPrim_",str,".mat"), collapse = ""), labpcexport = VnPrim)
   writeMat(paste(c(path, "/save/LnERMtrain_",str,".mat"), collapse = ""), labpcexport = LnERMtrain)

@@ -20,19 +20,22 @@ bisection <- function(fn, a, b, tol = 1e-8) {
 
 kl_inv_sup <- function(Emp, RHS){
   #print("kl_inv_sup")
+  if (Emp==0)
+    Emp=1e-8
   fn <- function(p) Emp*log(Emp/p) + (1-Emp)*log((1-Emp)/(1-p)) - RHS;
-  if (fn(1-1e-5) <= 0)
-    return(1-1e-5)
+  if (fn(1-1e-8) <= 0)
+    return(1-1e-8)
   p <- bisection(fn, Emp, 1-1e-8)
   return(p)
 }
 
 kl_inv_inf <- function(Emp, RHS){
   #print("kl_inv_inf")
+  if (Emp==0)
+    Emp=1e-8
   fn <- function(p) Emp*log(Emp/p) + (1-Emp)*log((1-Emp)/(1-p)) - RHS;
-  #print(c("Emp", Emp, "RHS", RHS, "1e-5", fn(1e-5)))
-  if (fn(1e-5) <= 0)
-    return(1e-5)
+  if (fn(1e-8) <= 0)
+    return(1e-8)
   p <- bisection(fn, 1e-8, Emp)
   return(p)
 }

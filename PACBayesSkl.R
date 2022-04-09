@@ -34,8 +34,11 @@ boundSkl_IF <- function(NMC, sigma2){
   # compute kl inverse
   PlusLHS <- 0.5*mean(DifflossP)/(1-mu)
   MinusLHS <- 0.5*mean(DifflossM)/(mu+1)
+  #print(c(  "RHS",RHS))
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
+  print(c("P",PlusLHS, "PT", PlusTerm))
+  print(c("M",MinusLHS,"MT", MinusTerm))
   
   # compute reference term
   RefTerm <- bin_inv_sup(ntrain/2, ntrain/2*mean(loss1), delta/4) +  bin_inv_sup(ntrain/2, ntrain/2*mean(loss2), delta/4)
