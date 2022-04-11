@@ -13,8 +13,11 @@ boundSkl <- function(NMC, sigma2){
   LnlossM <- apply(Lnloss, 1:2, function(x) max(c(0, mu-x)))
   
   # compute complexity term
-  compTerm <- KLGauss(ERMfull, numeric(d), sigma2)
-  RHS <- (compTerm + log(4*sigma2GridSize*sqrt(ntrain)/delta))/ntrain
+  #compTerm <- KLGauss(ERMfull, numeric(d), sigma2) # allow selection of the variance
+  #RHS <- (compTerm + log(4*sigma2GridSize*sqrt(ntrain)/delta))/ntrain # allow selection of the variance
+  ratio <- initsigma2/(sigma2)
+  compTerm <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMfull,ERMfull)
+  RHS <- (compTerm + log(4*sqrt(ntrain)/delta))/ntrain
   
   # compute Plus Term
   PlusLHS <- mean(LnlossP)/(1-mu)

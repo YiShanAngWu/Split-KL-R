@@ -24,7 +24,7 @@ boundPBEB <- function(NMC, sigma2){
   return(list(val=val,VarTS=VarTS,KL=KL))
 }
 
-### Maurer's bound
+### Maurer's bound (PBkl)
 boundPBKL <- function(Ln,sigma2){
   # Computing the KL 
   ratio <- initsigma2/(sigma2)
