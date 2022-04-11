@@ -52,7 +52,7 @@ boundCatoni <- function(Ln,sigma2){
 }
 
 
-## Bounds on half the data
+## Bounds on half the data (trained on S1, bound on S2)
 ### Tolstikhin-Seldin bound
 boundPBEB_half <- function(NMC,sigma2){
   c1 <- c2 <- 1.15
@@ -82,14 +82,13 @@ boundPBEB_half <- function(NMC,sigma2){
 
 ### Maurer's bound
 boundPBKL_half <- function(NMC,sigma2){
-  theta_samplesTS <- get_sample(type = distribution, variance2=sigma2, mean=ERMs[,2], NMC)
+  theta_samplesTS <- get_sample(type = distribution, variance2=sigma2, mean=ERMs[,3], NMC)
   nhalf <- ntrain/2
-  Ln <- mean(loss(Ytrain[1:nhalf],predictor(Xtrain[1:nhalf,],theta_samplesTS)))
-  # Computing the KL 
-  KL <-  (1/(2*sigma2))*sum(square_diff(ERMs[,1],ERMs[,2])) + log(sigma2GridSize)
+  Ln <- mean(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS)))
+  # Computing the KL (KL(rho, pi_S1))
+  KL <-  KLGauss(ERMs[,3],ERMs[,1], sigma2)
   
-  #fn <- function(p) Ln*log(Ln/p) + (1-Ln)*log((1-Ln)/(1-p)) - (KL + log(2*sqrt(nhalf)/delta))/nhalf;
-  RHS <- (KL + log(2*sqrt(nhalf)/delta))/nhalf
+  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/delta))/nhalf
   val <- kl_inv_sup(Ln, RHS)
   
   return(list(val=val,KL=KL))
@@ -146,5 +145,5 @@ boundPBKL_IF <- function(NMC,sigma2){
   RefTerm <- bin_inv_sup(nhalf, nhalf*mean(loss1), delta/4) +  bin_inv_sup(nhalf, nhalf*mean(loss2), delta/4)
   
   val <- 0.5*(Term1 + Term2 + RefTerm)
-  return(list(val=val,KL=0.5*(KL1+KL2), Term1=Term1, Term2=Term2, RefTerm=RefTerm))
+  return(list(val=val,KL=(KL1+KL2), Term1=Term1, Term2=Term2, RefTerm=RefTerm))
 }

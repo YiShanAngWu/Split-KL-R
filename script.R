@@ -133,7 +133,7 @@ for(inb in 1:nb.seq){
         bestSigma2[irepet,2,inb] <- sigma2
       }
       ## Maurer bound
-      ifelse(IF,tmpBKL<- boundPBKL_IF(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
+      ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
       if(tmpBKL$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBKL$val
         KL[irepet,inb] <-  tmpBKL$KL
