@@ -28,7 +28,6 @@ boundPBEB <- function(NMC, sigma2){
 boundPBKL <- function(Ln,sigma2){
   # Computing the KL 
   ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3]) + log(sigma2GridSize)
   KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
   RHS <- (KL + log(2*sqrt(ntrain)/delta))/ntrain
   val <- kl_inv_sup(Ln, RHS)

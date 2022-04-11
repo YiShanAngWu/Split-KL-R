@@ -148,7 +148,7 @@ for(inb in 1:nb.seq){
       }
       
       ## Split-kl bound
-      ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
+      ifelse(IF, tmpBSkl <-boundSkl_half(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
       if(tmpBSkl$val < bound[irepet,5,inb]){
         bound[irepet,5,inb] <-  tmpBSkl$val
         bestSigma2[irepet,5,inb] <- sigma2
