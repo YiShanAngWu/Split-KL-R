@@ -28,9 +28,8 @@ boundPBEB <- function(NMC, sigma2){
 boundPBKL <- function(Ln,sigma2){
   # Computing the KL 
   ratio <- initsigma2/(sigma2)
-  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3]) + log(sigma2GridSize)
- 
-  #fn <- function(p) Ln*log(Ln/p) + (1-Ln)*log((1-Ln)/(1-p)) - (KL + log(2*sqrt(ntrain)/delta))/ntrain;
+  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3]) + log(sigma2GridSize)
+  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
   RHS <- (KL + log(2*sqrt(ntrain)/delta))/ntrain
   val <- kl_inv_sup(Ln, RHS)
   
@@ -113,4 +112,19 @@ boundCatoni_half <- function(NMC,sigma2){
   return(list(val=val,KL=KL))
 }
 
+## Bounds with average informed prior
 
+### Maurer's bound
+boundPBKL_IF <- function(NMC,sigma2){
+  theta_samplesTS <- get_sample(type = distribution, variance2=sigma2, mean=ERMs[,2], NMC)
+  nhalf <- ntrain/2
+  Ln <- mean(loss(Ytrain[1:nhalf],predictor(Xtrain[1:nhalf,],theta_samplesTS)))
+  # Computing the KL 
+  KL <-  (1/(2*sigma2))*sum(square_diff(ERMs[,1],ERMs[,2])) + log(sigma2GridSize)
+  
+  #fn <- function(p) Ln*log(Ln/p) + (1-Ln)*log((1-Ln)/(1-p)) - (KL + log(2*sqrt(nhalf)/delta))/nhalf;
+  RHS <- (KL + log(2*sqrt(nhalf)/delta))/nhalf
+  val <- kl_inv_sup(Ln, RHS)
+  
+  return(list(val=val,KL=KL))
+}

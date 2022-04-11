@@ -1,5 +1,5 @@
 # PAC-Bayes Split-kl bound
-
+## PAC-Bayes split-kl bound without informed prior
 boundSkl <- function(NMC, sigma2){
   ERMfull <- ERMs[,3]
   theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
@@ -27,7 +27,7 @@ boundSkl <- function(NMC, sigma2){
   val <- mu + (1-mu)*PlusTerm - (mu+1)*MinusTerm
   return(list(val=val, compTerm=compTerm, PlusTerm=PlusTerm, MinusTerm=MinusTerm))
 }
-
+## PAC-Bayes split-kl bound with informed prior
 boundSkl_IF <- function(NMC, sigma2){
   ERMfull <- ERMs[,3]
   ERM1 <- ERMs[,2]
