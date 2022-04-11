@@ -41,7 +41,8 @@ COMP <- function(ERMfull,ERM1,ERM2,sigma2){
   return(result)
 }
 
-OptimEtaVn <- function(NMC, vnTerm, compTerm){
+OptimEtaVn <- function(NMC, etaGrid, vnTerm, compTerm){
+  etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
   for(etaInd in 1:etaGridSize){
     eta <- etaGrid[etaInd]
@@ -53,7 +54,8 @@ OptimEtaVn <- function(NMC, vnTerm, compTerm){
   return(list(val=val,etaOpt=argmin))
 }
 
-OptimEtaVnPrime <- function(NMC, vnTermPrim){
+OptimEtaVnPrime <- function(NMC, etaGrid, vnTermPrim){
+  etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
   for(etaInd in 1:etaGridSize){
     eta <- etaGrid[etaInd]
@@ -84,6 +86,12 @@ VnPrimeTerm <- function(ERM1,ERM2,NMC){
 
 ## The following bound does not compute the empirical error
 mainBoundProba <- function(NMC,sigma2){
+  # For MGG
+  etaGridSize <- ceil(log(0.5*sqrt(ntrain/log(1/delta)))/log(rho))
+  etaGrid <- numeric(etaGridSize)
+  for(jj in 1:(etaGridSize))
+    etaGrid[jj] <- 1/(b*rho^(jj))   
+  
   vnTerm <- VnTerm(ERMfull = ERMs[,3],
                           ERM1 = ERMs[,2],
                           ERM2 = ERMs[,1],
@@ -93,8 +101,9 @@ mainBoundProba <- function(NMC,sigma2){
                    ERM2 = ERMs[,1],
                    sigma2 = sigma2)
   tmp1 <- OptimEtaVn(NMC = NMC,
+                     etaGrid,
                      vnTerm = vnTerm,
-                             compTerm = compTerm)
+                     compTerm = compTerm)
   etaOpt1 <- tmp1$etaOpt
   val1 <- tmp1$val
   
@@ -102,6 +111,7 @@ mainBoundProba <- function(NMC,sigma2){
                                 ERM2 = ERMs[,1],
                                 NMC = NMC)
   tmp2 <- OptimEtaVnPrime(NMC = NMC,
+                          etaGrid,
                           vnTermPrim = vnTermPrim)
   etaOpt2 <- tmp2$etaOpt
   val2 <- tmp2$val

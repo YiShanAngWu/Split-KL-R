@@ -44,7 +44,6 @@ kl_inv_inf <- function(Emp, RHS){
 }
 
 bin_inv_sup <- function(n, k, delta){
-  #print("bin_inv_sup")
   fn <- function(p) pbinom(k, n, p) - delta;
   if (fn(1)>=0)
     return(1)

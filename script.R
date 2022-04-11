@@ -53,9 +53,9 @@ predictor <- function(x,theta) round(1/(1+exp(-x%*%theta)))
 ## End of Experimental Setup
 source(paste(path, "gen-data.R", sep="/"))
 source(paste(path, "utils.R", sep="/"))
-source(paste(path, "PACBayes2.R", sep="/"))
+source(paste(path, "PACBayes-MGG.R", sep="/"))
 source(paste(path, "PACBayes-Others.R", sep="/"))
-source(paste(path, "PACBayesSkl.R", sep="/"))
+source(paste(path, "PACBayes-Skl.R", sep="/"))
 str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
 
 # Initializing 
@@ -93,12 +93,6 @@ for(inb in 1:nb.seq){
     ntrain <- length(Ytrain)
     if(irepet==1)
       print(c("Size of the training data=",ntrain))
-    
-    # For MGG
-    etaGridSize <- ceil(log(0.5*sqrt(ntrain/log(1/delta)))/log(rho))
-    etaGrid <- numeric(etaGridSize)
-    for(jj in 1:(etaGridSize))
-      etaGrid[jj] <- 1/(b*rho^(jj)) 
     
     # Build grid of posterior variance for the Gaussian-ERM distribution 
     sigma2GridSize <- ceil(log(ntrain)/log(2))
@@ -154,9 +148,9 @@ for(inb in 1:nb.seq){
       }
       
       ## Split-kl bound
-      ifelse(IF, tmpSkl <-boundSkl_IF(NMC, sigma2), tmpSkl <-boundSkl(NMC, sigma2))
-      if(tmpSkl$val < bound[irepet,5,inb]){
-        bound[irepet,5,inb] <-  tmpSkl$val
+      ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
+      if(tmpBSkl$val < bound[irepet,5,inb]){
+        bound[irepet,5,inb] <-  tmpBSkl$val
         bestSigma2[irepet,5,inb] <- sigma2
       }
     }
