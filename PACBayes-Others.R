@@ -116,7 +116,20 @@ boundCatoni_half <- function(NMC,sigma2){
 
 ### Maurer's bound
 boundPBKL_IF <- function(NMC,sigma2){
-  theta_samplesTS <- get_sample(type = distribution, variance2=sigma2, mean=ERMs[,2], NMC)
+  ERMfull <- ERMs[,3]
+  ERM1 <- ERMs[,2]
+  ERM2 <- ERMs[,1]
+  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
+  
+  # compute reference loss
+  loss1 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERM1)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
+  loss2 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERM2)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
+  
+  # compute excess loss
+  Diffloss <- matrix(nrow = ntrain, ncol = NMC, data = NA)
+  Diffloss[1:(ntrain/2),] <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samples))-loss1
+  Diffloss[(ntrain/2+1):ntrain,] <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samples))-loss2
+  
   nhalf <- ntrain/2
   Ln <- mean(loss(Ytrain[1:nhalf],predictor(Xtrain[1:nhalf,],theta_samplesTS)))
   # Computing the KL 

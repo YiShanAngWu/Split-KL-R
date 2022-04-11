@@ -59,11 +59,11 @@ boundSkl_IF <- function(NMC, sigma2){
   RHS <- (compTerm + 2*log(8*sigma2GridSize*sqrt(ntrain/2)/delta))/ntrain
   
   # compute Plus Term
-  PlusLHS <- 0.5*mean(DifflossP)/(1-mu)
+  PlusLHS <- mean(DifflossP)/(1-mu)
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
   
   # compute Minus Term
-  MinusLHS <- 0.5*mean(DifflossM)/(mu+1)
+  MinusLHS <- mean(DifflossM)/(mu+1)
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   # compute reference term

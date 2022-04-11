@@ -19,7 +19,7 @@ par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "haberman"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "spam"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
