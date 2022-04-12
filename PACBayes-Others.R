@@ -164,7 +164,7 @@ boundTS_half <- function(Ln,NMC,sigma2){
 
 ### Maurer's bound
 boundPBKL_half <- function(NMC,sigma2){
-  theta_samplesTS <- get_sample(type = distribution, variance2=sigma2, mean=ERMs[,3], NMC)
+  theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
   nhalf <- ntrain/2
   Ln <- mean(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS)))
   # Computing the KL (KL(rho, pi_S1))

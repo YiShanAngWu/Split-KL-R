@@ -162,6 +162,36 @@ boundMGG <- function(NMC, sigma2){
   return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,compTerm=KL,etaOpt=c(etaOpt,Inf)))
 }
 
+## PAC-Bayes un-expected Bernstein bound on half the data (trained on S1, bound on S2)
+boundMGG_half <- function(NMC, sigma2){
+  theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
+  nhalf <- ntrain/2
+  
+  # compute empirical loss & the variance
+  Ln <- mean(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS)))
+  EmpVTerm <- mean(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS))^2)
+  
+  # Grid of eta  
+  etaGridSize <- ceil(log(0.5*sqrt(nhalf/log(1/delta)))/log(rho))
+  etaGrid <- numeric(etaGridSize)
+  for(jj in 1:(etaGridSize))
+    etaGrid[jj] <- 1/(b*rho^(jj))
+  
+  # Computing the KL (KL(rho, pi_S1))
+  KL <-  KLGauss(ERMs[,3],ERMs[,1], sigma2)
+  
+  # compute eta-related terms
+  tmp <- OptimEtaEmpV(etaGrid = etaGrid,
+                      EmpVTerm = EmpVTerm,
+                      compTerm = KL + log(sigma2GridSize))
+  etaOpt <- tmp$etaOpt
+  valV <- tmp$val
+
+  # compute the bound
+  val <- Ln + valV
+  
+  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,compTerm=KL,etaOpt=c(etaOpt,Inf)))
+}
 
 
 
