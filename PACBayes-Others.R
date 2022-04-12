@@ -1,5 +1,5 @@
 ### Tolstikhin-Seldin bound
-boundPBEB <- function(NMC, sigma2){
+boundTS <- function(NMC, sigma2){
   c1 <- c2 <- 1.15
   # Computing the KL
   ratio <- initsigma2/(sigma2)
@@ -50,10 +50,15 @@ boundCatoni <- function(Ln,sigma2){
   return(list(val=val,KL=KL))
 }
 
+### PAC-Bayes-Bennett bound
+boundPBB <- function(NMC, sigma2){
+  
+}
+
 
 ## Bounds on half the data (trained on S1, bound on S2)
 ### Tolstikhin-Seldin bound
-boundPBEB_half <- function(NMC,sigma2){
+boundTS_half <- function(NMC,sigma2){
   c1 <- c2 <- 1.15
   
   nhalf <- ntrain/2

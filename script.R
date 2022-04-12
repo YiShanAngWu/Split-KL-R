@@ -126,7 +126,7 @@ for(inb in 1:nb.seq){
       }
       
       ## TS bound
-      ifelse(IF,tmpBEB<- boundPBEB_half(NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
+      ifelse(IF,tmpBEB<- boundTS_half(NMC,sigma2),tmpBEB<-boundTS(NMC,sigma2))
       if(Ln + tmpBEB$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- Ln + tmpBEB$val
         VarTS[irepet,inb] <- tmpBEB$VarTS
