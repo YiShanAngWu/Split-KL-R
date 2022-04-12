@@ -19,7 +19,7 @@ par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "kr-vs-kp"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "breast-cancer"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
@@ -114,14 +114,14 @@ for(inb in 1:nb.seq){
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
       
       ## MGG bound 
-      tmpBProb <- mainBoundProba(NMC,sigma2)
-      if(Ln + tmpBProb$val < bound[irepet,1,inb]){
-        bound[irepet,1,inb] <- Ln + tmpBProb$val
-        Vn[irepet,inb] <- tmpBProb$vnTerm
-        VnPrim[irepet,inb] <- tmpBProb$vnTermPrim
-        comp[irepet,inb] <- tmpBProb$compTerm
-        val1[irepet,inb] <- tmpBProb$val1
-        val2[irepet,inb] <- tmpBProb$val2
+      ifelse(IF,tmpBMGG<- boundMGG_IF(Ln,NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
+      if(tmpBMGG$val < bound[irepet,1,inb]){
+        bound[irepet,1,inb] <- tmpBMGG$val
+        Vn[irepet,inb] <- tmpBMGG$vnTerm
+        VnPrim[irepet,inb] <- tmpBMGG$vnTermPrim
+        comp[irepet,inb] <- tmpBMGG$compTerm
+        val1[irepet,inb] <- tmpBMGG$val1
+        val2[irepet,inb] <- tmpBMGG$val2
         bestSigma2[irepet,1,inb] <- sigma2
       }
       
@@ -133,7 +133,7 @@ for(inb in 1:nb.seq){
         bestSigma2[irepet,2,inb] <- sigma2
       }
       ## Maurer bound
-      ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
+      ifelse(IF,tmpBKL<- boundPBKL_IF(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
       if(tmpBKL$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBKL$val
         KL[irepet,inb] <-  tmpBKL$KL
@@ -148,7 +148,7 @@ for(inb in 1:nb.seq){
       }
       
       ## Split-kl bound
-      ifelse(IF, tmpBSkl <-boundSkl_half(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
+      ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
       if(tmpBSkl$val < bound[irepet,5,inb]){
         bound[irepet,5,inb] <-  tmpBSkl$val
         bestSigma2[irepet,5,inb] <- sigma2
@@ -183,7 +183,7 @@ str <- paste(c(str,d),collapse="-")
 if(!grepl("synthetic",data_option, fixed=TRUE)){
   meansbound <- apply(bound, 2, mean)
   meanstest <- apply(Lntest, 2, mean)
-  print(paste(c(data_option, ". ERM test error=", mean(LnERMtest)),collapse=""))
+  print(paste(c(data_option, ". IF=", IF, ". ERM test error=", mean(LnERMtest)),collapse=""))
   print(paste(c("MGG Bound=",  round(meansbound[1],3),
               ", Maurer bound=", round(meansbound[3],3),
              ", TS bound=", round(meansbound[2],3), 

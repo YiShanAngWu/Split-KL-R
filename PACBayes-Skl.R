@@ -1,5 +1,6 @@
 # PAC-Bayes Split-kl bound
 ## PAC-Bayes split-kl bound without informed prior
+### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL
 boundSkl <- function(NMC, sigma2){
   ERMfull <- ERMs[,3]
   theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
@@ -36,6 +37,7 @@ boundSkl <- function(NMC, sigma2){
 }
 
 ## PAC-Bayes split-kl bound on half the data  (trained on S1, bound on S2)
+### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL_half
 boundSkl_half <- function(NMC, sigma2){
   theta_samples <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, n_samples=NMC)
   

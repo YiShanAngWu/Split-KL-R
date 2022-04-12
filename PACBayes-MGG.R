@@ -41,7 +41,7 @@ COMP <- function(ERMfull,ERM1,ERM2,sigma2){
   return(result)
 }
 
-OptimEtaVn <- function(NMC, etaGrid, vnTerm, compTerm){
+OptimEtaVn <- function(etaGrid, vnTerm, compTerm){
   etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
   for(etaInd in 1:etaGridSize){
@@ -54,7 +54,7 @@ OptimEtaVn <- function(NMC, etaGrid, vnTerm, compTerm){
   return(list(val=val,etaOpt=argmin))
 }
 
-OptimEtaVnPrime <- function(NMC, etaGrid, vnTermPrim){
+OptimEtaVnPrime <- function(etaGrid, vnTermPrim){
   etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
   for(etaInd in 1:etaGridSize){
@@ -84,8 +84,8 @@ VnPrimeTerm <- function(ERM1,ERM2,NMC){
   return(mean(res))
 }
 
-## The following bound does not compute the empirical error
-mainBoundProba <- function(NMC,sigma2){
+## PAC-Bayes un-expected Bernstein bound with informed prior
+boundMGG_IF <- function(Ln,NMC,sigma2){
   # For MGG
   etaGridSize <- ceil(log(0.5*sqrt(ntrain/log(1/delta)))/log(rho))
   etaGrid <- numeric(etaGridSize)
@@ -100,8 +100,7 @@ mainBoundProba <- function(NMC,sigma2){
                    ERM1 = ERMs[,2],
                    ERM2 = ERMs[,1],
                    sigma2 = sigma2)
-  tmp1 <- OptimEtaVn(NMC = NMC,
-                     etaGrid,
+  tmp1 <- OptimEtaVn(etaGrid,
                      vnTerm = vnTerm,
                      compTerm = compTerm)
   etaOpt1 <- tmp1$etaOpt
@@ -110,16 +109,58 @@ mainBoundProba <- function(NMC,sigma2){
   vnTermPrim <- VnPrimeTerm(ERM1 = ERMs[,2],
                                 ERM2 = ERMs[,1],
                                 NMC = NMC)
-  tmp2 <- OptimEtaVnPrime(NMC = NMC,
-                          etaGrid,
+  tmp2 <- OptimEtaVnPrime(etaGrid,
                           vnTermPrim = vnTermPrim)
   etaOpt2 <- tmp2$etaOpt
   val2 <- tmp2$val
   
-  val <- val1 + val2
+  val <- Ln + val1 + val2
   return(list(val=val,val1=val1,val2=val2,vnTerm=vnTerm,vnTermPrim=vnTermPrim,compTerm=compTerm,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
+## PAC-Bayes un-expected Bernstein bound without informed prior
+OptimEtaEmpV <- function(etaGrid, EmpVTerm, compTerm){
+  etaGridSize <- length(etaGrid)
+  result <- numeric(etaGridSize)
+  for(etaInd in 1:etaGridSize){
+    eta <- etaGrid[etaInd]
+    result[etaInd] <- EmpVTerm*(-log(1-eta*b)/(eta*b*b) - 1/b) +
+      (compTerm  + log(etaGridSize/delta))/(eta*ntrain)
+  }
+  argmin <- which.min(result)
+  val <- result[argmin]
+  return(list(val=val,etaOpt=argmin))
+}
+
+boundMGG <- function(NMC, sigma2){
+  theta_samples <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, n_samples=NMC)
+  
+  # compute empirical loss & the variance
+  Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
+  EmpVTerm <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS))^2)
+  
+  # Grid of eta  
+  etaGridSize <- ceil(log(0.5*sqrt(ntrain/log(1/delta)))/log(rho))
+  etaGrid <- numeric(etaGridSize)
+  for(jj in 1:(etaGridSize))
+    etaGrid[jj] <- 1/(b*rho^(jj))  
+  
+  # Compute the KL 
+  ratio <- initsigma2/(sigma2)
+  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
+  
+  # compute eta-related terms
+  tmp <- OptimEtaEmpV(etaGrid = etaGrid,
+                      EmpVTerm = EmpVTerm,
+                      compTerm = KL)
+  etaOpt <- tmp$etaOpt
+  valV <- tmp$val
+  
+  # compute the bound
+  val <- Ln + valV
+  
+  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,compTerm=KL,etaOpt=c(etaOpt,Inf)))
+}
 
 
 
