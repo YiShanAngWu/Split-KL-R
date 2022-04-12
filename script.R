@@ -20,7 +20,7 @@ par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "tictactoe"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "mushroom"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
@@ -61,8 +61,8 @@ str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
 
 # Initializing 
 ifelse(grepl("synthetic",data_option, fixed=TRUE), nbRepet <- 10, nbRepet <- 5)
-bound <- array(dim = c(nbRepet,5,nb.seq), data = Inf)
-Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,5,nb.seq), data = NA) #posterior
+bound <- array(dim = c(nbRepet,4,nb.seq), data = Inf)
+Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,4,nb.seq), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
 Vn <- VnPrim  <- VarTS  <- array(dim = c(nbRepet, nb.seq), data = NA)
 comp <- KL <- array(dim = c(nbRepet, nb.seq), data = NA)
@@ -142,20 +142,20 @@ for(inb in 1:nb.seq){
       }
       
       ## Catoni bound
-      ifelse(IF, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
-      if(tmpBCT$val < bound[irepet,4,inb]){
-        bound[irepet,4,inb] <- tmpBCT$val
-        bestSigma2[irepet,4,inb] <- sigma2
-      }
+      #ifelse(IF, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
+      #if(tmpBCT$val < bound[irepet,4,inb]){
+      #  bound[irepet,4,inb] <- tmpBCT$val
+      #  bestSigma2[irepet,4,inb] <- sigma2
+      #}
       
       ## Split-kl bound
       ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
-      if(tmpBSkl$val < bound[irepet,5,inb]){
-        bound[irepet,5,inb] <-  tmpBSkl$val
-        bestSigma2[irepet,5,inb] <- sigma2
+      if(tmpBSkl$val < bound[irepet,4,inb]){
+        bound[irepet,4,inb] <-  tmpBSkl$val
+        bestSigma2[irepet,4,inb] <- sigma2
       }
     }
-    for(mtd in 1:5){
+    for(mtd in 1:4){
       theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3],variance2=bestSigma2[irepet,mtd,inb], NMC)
       Lntrain[irepet,mtd,inb] <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
       Lntest[irepet,mtd,inb] <- mean(loss(Ytest,predictor(Xtest,theta_samplesTS)))
@@ -188,13 +188,13 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   print(paste(c("MGG Bound=",  round(meansbound[1],3),
               ", Maurer bound=", round(meansbound[3],3),
              ", TS bound=", round(meansbound[2],3), 
-             ", Catoni bound=", round(meansbound[4],3),
-             ", SplitKL bound=", round(meansbound[5],3)),collapse = ""))
+             #", Catoni bound=", round(meansbound[4],3),
+             ", SplitKL bound=", round(meansbound[4],3)),collapse = ""))
   print(paste(c("MGG test=",  round(meanstest[1],3),
                 ", Maurer test=", round(meanstest[3],3),
                 ", TS test=", round(meanstest[2],3), 
-                ", Catoni test=", round(meanstest[4],3),
-                ", SplitKL test=", round(meanstest[5],3)),collapse = ""))
+                #", Catoni test=", round(meanstest[4],3),
+                ", SplitKL test=", round(meanstest[4],3)),collapse = ""))
   
 #  print(paste(c(round(mean(LnERMtest),3), " & ",  round(meansbound[1],3),
 #                " & ", round(meansbound[3],3),
@@ -205,8 +205,8 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   MeanBProb <- apply(X = bound[,1,], MARGIN = 2, FUN = mean)
   MeanBTS <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)
   MeanBKL <- apply(X = bound[,3,], MARGIN = 2, FUN = mean)
-  MeanBCatoni <- apply(X = bound[,4,], MARGIN = 2, FUN = mean)
-  MeanBSkl <- apply(X = bound[,5,], MARGIN = 2, FUN = mean)
+  #MeanBCatoni <- apply(X = bound[,4,], MARGIN = 2, FUN = mean)
+  MeanBSkl <- apply(X = bound[,4,], MARGIN = 2, FUN = mean)
   
   ## Saving bound 
   writeMat(paste(c(path, "/save/results_",str,".mat"), collapse = ""), labpcexport = bound)

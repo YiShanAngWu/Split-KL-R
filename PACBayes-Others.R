@@ -1,4 +1,5 @@
-### Tolstikhin-Seldin bound
+## vanilla bounds
+### Tolstikhin-Seldin bound (not used)
 boundTS <- function(Ln, NMC, sigma2){
   c1 <- c2 <- 1.15
   # Computing the KL
@@ -78,7 +79,6 @@ OptimGamPBB <- function(gamGrid, VarTerm, KL, ldaGridSize){
   return(list(val=val, gamOpt=argmin))
 }
 
-
 boundPBEB <- function(NMC, sigma2){
   c1 <- c2 <- 1.05
   delta1 <- delta2 <- delta/2
@@ -134,7 +134,7 @@ boundPBEB <- function(NMC, sigma2){
 
 
 ## Bounds on half the data (trained on S1, bound on S2)
-### Tolstikhin-Seldin bound
+### Tolstikhin-Seldin bound (not used)
 boundTS_half <- function(Ln,NMC,sigma2){
   c1 <- c2 <- 1.15
   
@@ -193,8 +193,8 @@ boundCatoni_half <- function(NMC,sigma2){
   return(list(val=val,KL=KL))
 }
 
-## Bounds with average informed prior
 
+## Bounds with average informed prior
 ### Maurer's bound
 boundPBKL_IF <- function(NMC,sigma2){
   nhalf <- ntrain/2
