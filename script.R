@@ -9,6 +9,7 @@ rm(list=ls())
 set.seed(123)
 library(MASS)
 library(tictoc)
+library(lamW)
 library(Matrix)
 library(pracma)
 library(stringr)
@@ -19,7 +20,7 @@ par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
-data_option = "breast-cancer"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+data_option = "tictactoe"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
                                   # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
@@ -27,7 +28,7 @@ lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
 #half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
-IF <-  T                          # Set to true so that Informed Prior is used for all methods
+IF <-  F                          # Set to true so that Informed Prior is used for all methods
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -126,10 +127,10 @@ for(inb in 1:nb.seq){
       }
       
       ## TS bound
-      ifelse(IF,tmpBEB<- boundTS_half(NMC,sigma2),tmpBEB<-boundTS(NMC,sigma2))
-      if(Ln + tmpBEB$val < bound[irepet,2,inb]){
-        bound[irepet,2,inb] <- Ln + tmpBEB$val
-        VarTS[irepet,inb] <- tmpBEB$VarTS
+      ifelse(IF,tmpBEB<- boundTS_half(Ln,NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
+      if(tmpBEB$val < bound[irepet,2,inb]){
+        bound[irepet,2,inb] <- tmpBEB$val
+        VarTS[irepet,inb] <- tmpBEB$VarEB
         bestSigma2[irepet,2,inb] <- sigma2
       }
       ## Maurer bound

@@ -1,5 +1,5 @@
 ### Tolstikhin-Seldin bound
-boundTS <- function(NMC, sigma2){
+boundTS <- function(Ln, NMC, sigma2){
   c1 <- c2 <- 1.15
   # Computing the KL
   ratio <- initsigma2/(sigma2)
@@ -21,7 +21,8 @@ boundTS <- function(NMC, sigma2){
   }else{
     val <- 2*(KL+log(2*v1/delta))/ntrain
   }
-  return(list(val=val,VarTS=VarTS,KL=KL))
+  val <- Ln + val
+  return(list(val=val,VarEB=VarTS,KL=KL))
 }
 
 ### Maurer's bound (PBkl)
@@ -50,15 +51,91 @@ boundCatoni <- function(Ln,sigma2){
   return(list(val=val,KL=KL))
 }
 
-### PAC-Bayes-Bennett bound
-boundPBB <- function(NMC, sigma2){
+### PAC-Bayes Empirical Bennett bound
+OptimLdaVar <- function(ldaGrid, VnTerm, KL, gamGridSize){
+  ldaGridSize <- length(ldaGrid)
+  result <- numeric(ldaGridSize)
+  for(ldaInd in 1:(ldaGridSize)){
+    lda <- ldaGrid[ldaInd]
+    result[ldaInd] <- VnTerm/(1-lda*ntrain/(2*(ntrain-1))) + 
+      (KL+log(2*gamGridSize*ldaGridSize/delta))/(ntrain*lda*(1-lda*ntrain/(2*(ntrain-1))))
+  }
+  argmin <- which.min(result)
+  VarEB <- result[argmin]
+  return(list(VarEB=VarEB,ldaOpt=argmin))
+}
+
+OptimGamPBB <- function(gamGrid, VarTerm, KL, ldaGridSize){
+  gamGridSize <- length(gamGrid)
+  result <- numeric(gamGridSize)
+  for(gamInd in 1:(gamGridSize)){
+    gam <- gamGrid[gamInd]
+    result[gamInd] <- (exp(gam)-gam-1)/(gam)*VarTerm +
+      (KL+log(2*gamGridSize*ldaGridSize/delta))/(ntrain*gam)
+  }
+  argmin <- which.min(result)
+  val <- result[argmin]
+  return(list(val=val, gamOpt=argmin))
+}
+
+
+boundPBEB <- function(NMC, sigma2){
+  c1 <- c2 <- 1.05
+  delta1 <- delta2 <- delta/2
   
+  # lambda Grid
+  ldaGridSize <- ceil(log(0.5*sqrt((ntrain-1)/log(1/delta1)+1)+0.5) / log(c1))
+  ldaGrid <- numeric(ldaGridSize)
+  for(jj in 1:(ldaGridSize))
+    ldaGrid[jj] <- c1^(jj-1)*2*(ntrain-1)/ntrain / (sqrt((ntrain-1)/log(1/delta1)+1)+1)
+  
+  # gamma Grid
+  gam_Min <- lambertW0((4/ntrain*log(1/delta2)-1) /exp(1)) + 1
+  Vmin <- 2*log(1/delta1)/(ntrain-1)
+  alpha <- 1/(1+1/Vmin)
+  gam_Max <- -lambertWm1(-alpha*exp(-alpha)) - alpha
+  gamGridSize <- ceil(log(gam_Max/gam_Min) /log(c2))
+  gamGrid <- numeric(gamGridSize)
+  for(jj in 1:(gamGridSize))
+    gamGrid[jj] <- c2^(jj-1)*gam_Min
+  
+  # compute losses
+  theta_samples <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, n_samples=NMC)
+  
+  ## compute empirical loss
+  losses <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
+  Ln <- mean(losses)
+  
+  ## compute the variance
+  Vnlosses <- (losses - matrix(colMeans(losses), nrow=ntrain, ncol=NMC, byrow=TRUE))^2
+  VnTerm <- mean(Vnlosses)*ntrain/(ntrain-1)
+  
+  # Compute the KL
+  ratio <- initsigma2/(sigma2)
+  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
+  
+  # compute the variance Term
+  tmp1 <- OptimLdaVar(ldaGrid = ldaGrid,
+                      VnTerm = VnTerm,
+                      KL = KL,
+                      gamGridSize = gamGridSize)
+  lamOpt <- tmp1$lamOpt
+  VarEB <- tmp1$VarEB
+  
+  # compute PBB
+  tmp2 <- OptimGamPBB(gamGrid = gamGrid,
+                      VarTerm = VarEB,
+                      KL = KL,
+                      ldaGridSize = ldaGridSize)
+  gamOpt <- tmp2$gamOpt
+  val <- tmp2$val
+  return(list(val=Ln+val, VarEB=VarEB, KL=KL))
 }
 
 
 ## Bounds on half the data (trained on S1, bound on S2)
 ### Tolstikhin-Seldin bound
-boundTS_half <- function(NMC,sigma2){
+boundTS_half <- function(Ln,NMC,sigma2){
   c1 <- c2 <- 1.15
   
   nhalf <- ntrain/2
@@ -81,7 +158,8 @@ boundTS_half <- function(NMC,sigma2){
   }else{
     val <- 2*(KL+log(2*v1/delta))/nhalf
   }
-  return(list(val=val,VarTS=VarTS,KL=KL))
+  val <- Ln + val
+  return(list(val=val,VarEB=VarTS,KL=KL))
 }
 
 ### Maurer's bound
