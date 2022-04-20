@@ -3,7 +3,6 @@
 ### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL
 boundSkl <- function(NMC, sigma2){
   ERMfull <- ERMs[,3]
-  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
   
   # compute loss
   Lnloss <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
@@ -39,8 +38,7 @@ boundSkl <- function(NMC, sigma2){
 ## PAC-Bayes split-kl bound on half the data  (trained on S1, bound on S2)
 ### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL_half
 boundSkl_half <- function(NMC, sigma2){
-  theta_samples <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, n_samples=NMC)
-  
+
   # compute loss
   nhalf <- ntrain/2
   Lnloss <- loss(Ytrain[(ntrain/2+1):ntrain], predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS))
@@ -79,16 +77,15 @@ boundSkl_IF <- function(NMC, sigma2){
   ERMfull <- ERMs[,3]
   ERM1 <- ERMs[,2]
   ERM2 <- ERMs[,1]
-  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
-  
+  #theta_samplesTS <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
   # compute reference loss
   loss1 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERM1)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
   loss2 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERM2)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
   
   # compute excess loss
   Diffloss <- matrix(nrow = ntrain, ncol = NMC, data = NA)
-  Diffloss[1:(ntrain/2),] <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samples))-loss1
-  Diffloss[(ntrain/2+1):ntrain,] <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samples))-loss2
+  Diffloss[1:(ntrain/2),] <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-loss1
+  Diffloss[(ntrain/2+1):ntrain,] <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS))-loss2
   
   # split excess loss
   mu <- 0

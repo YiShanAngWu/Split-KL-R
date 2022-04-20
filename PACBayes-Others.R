@@ -9,7 +9,7 @@ boundTS <- function(Ln, NMC, sigma2){
   v1 <- ceiling((1/log(c1))*log(sqrt((exp(1)-2)*ntrain/(4*log(2/delta))))+1)
   v2 <- ceiling((1/log(c2))*log(.5*sqrt((ntrain-1)/(log(2/delta))+1)+.5))
   
-  theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
+  #theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
   Loss <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
   Ln <-  mean(Loss)
   VarTS <- mean(apply(X = Loss, MARGIN = 2, FUN = var))
@@ -164,7 +164,6 @@ boundTS_half <- function(Ln,NMC,sigma2){
 
 ### Maurer's bound
 boundPBKL_half <- function(NMC,sigma2){
-  theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
   nhalf <- ntrain/2
   Ln <- mean(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],theta_samplesTS)))
   # Computing the KL (KL(rho, pi_S1))
@@ -201,15 +200,14 @@ boundPBKL_IF <- function(NMC,sigma2){
   ERMfull <- ERMs[,3]
   ERM1 <- ERMs[,2]
   ERM2 <- ERMs[,1]
-  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
   
   # compute reference loss
   loss1 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERM1)), nrow=NMC, ncol=nhalf, byrow=TRUE))
   loss2 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERM2)), nrow=NMC, ncol=nhalf, byrow=TRUE))
   
   # compute excess loss
-  Diffloss1 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samples))-loss1
-  Diffloss2 <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samples))-loss2
+  Diffloss1 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-loss1
+  Diffloss2 <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS))-loss2
 
   # compute Delta(h,h_S2) term
   KL1 <- KLGauss(ERMfull, ERM1, sigma2)

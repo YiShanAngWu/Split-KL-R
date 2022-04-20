@@ -26,8 +26,8 @@ buildERMsequenceFast <- function(eps = 1e-16){
 }
 
 computeExpectation <- function(ERMfull,NMC, sigma2){
-  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
-  result <- loss(Ytrain,predictor(Xtrain,theta_samples))
+  #theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
+  result <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
   return(mean(result))
 }
 
@@ -68,12 +68,12 @@ OptimEtaVnPrime <- function(etaGrid, vnTermPrim){
 }
 
 VnTerm <- function(ERMfull,ERM1,ERM2,NMC,sigma2){
-  theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
+  #theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
   result  <- matrix(nrow = ntrain, ncol = NMC, data = NA)
   loss1 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERM1)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
   loss2 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERM2)), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
-  result[1:(ntrain/2),] <- square_diff(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samples)),loss1)
-  result[(ntrain/2+1):ntrain,]<-square_diff(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samples)),loss2)
+  result[1:(ntrain/2),] <- square_diff(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS)),loss1)
+  result[(ntrain/2+1):ntrain,]<-square_diff(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS)),loss2)
   return(mean(result))
 }
 
@@ -85,7 +85,9 @@ VnPrimeTerm <- function(ERM1,ERM2,NMC){
 }
 
 ## PAC-Bayes un-expected Bernstein bound with informed prior
-boundMGG_IF <- function(Ln,NMC,sigma2){
+boundMGG_IF <- function(NMC,sigma2){
+  Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
+  
   # For MGG
   etaGridSize <- ceil(log(0.5*sqrt(ntrain/log(1/delta)))/log(rho))
   etaGrid <- numeric(etaGridSize)
@@ -96,13 +98,13 @@ boundMGG_IF <- function(Ln,NMC,sigma2){
                           ERM1 = ERMs[,2],
                           ERM2 = ERMs[,1],
                           NMC = NMC, sigma2=sigma2)
-  compTerm <- COMP(ERMfull = ERMs[,3],
+  KL <- COMP(ERMfull = ERMs[,3],
                    ERM1 = ERMs[,2],
                    ERM2 = ERMs[,1],
                    sigma2 = sigma2)
   tmp1 <- OptimEtaVn(etaGrid,
                      vnTerm = vnTerm,
-                     compTerm = compTerm)
+                     compTerm = KL)
   etaOpt1 <- tmp1$etaOpt
   val1 <- tmp1$val
   
@@ -115,17 +117,17 @@ boundMGG_IF <- function(Ln,NMC,sigma2){
   val2 <- tmp2$val
   
   val <- Ln + val1 + val2
-  return(list(val=val,val1=val1,val2=val2,vnTerm=vnTerm,vnTermPrim=vnTermPrim,compTerm=compTerm,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,val1=val1,val2=val2,vnTerm=vnTerm,vnTermPrim=vnTermPrim,KL=KL,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
-## PAC-Bayes un-expected Bernstein bound without informed prior
-OptimEtaEmpV <- function(etaGrid, EmpVTerm, compTerm){
+## PAC-Bayes un-expected Bernstein bound
+OptimEtaEmpV <- function(etaGrid, EmpVTerm, compTerm, n){
   etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
   for(etaInd in 1:etaGridSize){
     eta <- etaGrid[etaInd]
     result[etaInd] <- EmpVTerm*(-log(1-eta*b)/(eta*b*b) - 1/b) +
-      (compTerm  + log(etaGridSize/delta))/(eta*ntrain)
+      (compTerm  + log(etaGridSize/delta))/(eta*n)
   }
   argmin <- which.min(result)
   val <- result[argmin]
@@ -133,8 +135,6 @@ OptimEtaEmpV <- function(etaGrid, EmpVTerm, compTerm){
 }
 
 boundMGG <- function(NMC, sigma2){
-  theta_samples <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, n_samples=NMC)
-  
   # compute empirical loss & the variance
   Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
   EmpVTerm <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS))^2)
@@ -152,19 +152,19 @@ boundMGG <- function(NMC, sigma2){
   # compute eta-related terms
   tmp <- OptimEtaEmpV(etaGrid = etaGrid,
                       EmpVTerm = EmpVTerm,
-                      compTerm = KL)
+                      compTerm = KL,
+                      n = ntrain)
   etaOpt <- tmp$etaOpt
   valV <- tmp$val
   
   # compute the bound
   val <- Ln + valV
   
-  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,compTerm=KL,etaOpt=c(etaOpt,Inf)))
+  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,KL=KL,etaOpt=c(etaOpt,Inf)))
 }
 
 ## PAC-Bayes un-expected Bernstein bound on half the data (trained on S1, bound on S2)
 boundMGG_half <- function(NMC, sigma2){
-  theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3], variance2=sigma2, NMC)
   nhalf <- ntrain/2
   
   # compute empirical loss & the variance
@@ -183,14 +183,15 @@ boundMGG_half <- function(NMC, sigma2){
   # compute eta-related terms
   tmp <- OptimEtaEmpV(etaGrid = etaGrid,
                       EmpVTerm = EmpVTerm,
-                      compTerm = KL + log(sigma2GridSize))
+                      compTerm = KL + log(sigma2GridSize),
+                      n = nhalf)
   etaOpt <- tmp$etaOpt
   valV <- tmp$val
 
   # compute the bound
   val <- Ln + valV
   
-  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,compTerm=KL,etaOpt=c(etaOpt,Inf)))
+  return(list(val=val,val1=valV,val2=0,vnTerm=EmpVTerm,vnTermPrim=0,KL=KL,etaOpt=c(etaOpt,Inf)))
 }
 
 
