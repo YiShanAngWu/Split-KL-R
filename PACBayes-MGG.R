@@ -32,11 +32,6 @@ computeExpectation <- function(ERMfull,NMC, sigma2){
   return(mean(result))
 }
 
-
-
-# PAC-Bayes un-expected Bernstein bound
-
-## Vanilla
 OptimEtaEmpV <- function(etaGrid, Vn, KL, n, Ndelta){
   etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
@@ -49,6 +44,8 @@ OptimEtaEmpV <- function(etaGrid, Vn, KL, n, Ndelta){
   val <- result[argmin]
   return(list(val=val,etaOpt=argmin))
 }
+
+# PAC-Bayes un-expected Bernstein bound
 
 ## vanilla
 MGG <- function(NMC, sigma2){
@@ -261,6 +258,7 @@ MGG_BWEL <- function(NMC, sigma2){
   return(list(val=val,KL=KL1,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
+## For Average + Excess
 COMP <- function(ERMfull,ERM1,ERM2,sigma2){
   #val1 <- sum(square_diff(ERMfull,ERM1))
   #val2 <- sum(square_diff(ERMfull,ERM2))
@@ -269,32 +267,6 @@ COMP <- function(ERMfull,ERM1,ERM2,sigma2){
   val2 <- KLGauss(ERMfull, ERM2, sigma2)
   result <- val1+val2
   return(result)
-}
-
-OptimEtaVn <- function(etaGrid, vnTerm, compTerm){
-  etaGridSize <- length(etaGrid)
-  result <- numeric(etaGridSize)
-  for(etaInd in 1:etaGridSize){
-    eta <- etaGrid[etaInd]
-    result[etaInd] <- vnTerm*(-log(1-eta*b)/(eta*b*b) - 1/b) +
-      (compTerm  + 2*log(2*sigma2GridSize*etaGridSize/delta))/(eta*ntrain)
-  }
-  argmin <- which.min(result)
-  val <- result[argmin]
-  return(list(val=val,etaOpt=argmin))
-}
-
-OptimEtaVnPrime <- function(etaGrid, vnTermPrim){
-  etaGridSize <- length(etaGrid)
-  result <- numeric(etaGridSize)
-  for(etaInd in 1:etaGridSize){
-    eta <- etaGrid[etaInd]
-    result[etaInd] <- vnTermPrim*(-log(1-eta*b)/(eta*b*b) - 1/b) + 
-      2*log(4*etaGridSize*sigma2GridSize/delta)/(eta*ntrain)
-  }
-  argmin <- which.min(result)
-  val <- result[argmin]
-  return(list(val=val,etaOpt=argmin))
 }
 
 VnTerm <- function(ERMfull,ERM1,ERM2,NMC,sigma2){
@@ -360,7 +332,7 @@ MGG_Avg <- function(NMC, sigma2){
   return(list(val=val,KL=KL1,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
-## PAC-Bayes un-expected Bernstein bound with informed prior
+## NOT USING!!
 MGG_IF <- function(NMC,sigma2){
   Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
   
