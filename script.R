@@ -28,7 +28,7 @@ lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
 #half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
-IF <-  F                          # Set to true so that Informed Prior is used for all methods
+#IF <-  F                          # Set to true so that Informed Prior is used for all methods
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -56,7 +56,6 @@ source(paste(path, "gen-data.R", sep="/"))
 source(paste(path, "utils.R", sep="/"))
 source(paste(path, "PACBayes-MGG.R", sep="/"))
 source(paste(path, "PACBayes-kl.R", sep="/"))
-source(paste(path, "PACBayes-Others.R", sep="/"))
 source(paste(path, "PACBayes-Skl.R", sep="/"))
 str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
 
@@ -116,7 +115,7 @@ for(inb in 1:nb.seq){
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
 
       ## Maurer bound
-      tmpBkl <- PBkl(NMC, sigma2)
+      tmpBkl <- PBkl_Avg(NMC, sigma2)
       #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
@@ -125,7 +124,8 @@ for(inb in 1:nb.seq){
       }
       
       ## MGG bound 
-      ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
+      #ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
+      tmpBMGG <- boundMGG_IF(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
         #Vn[irepet,inb] <- tmpBMGG$vnTerm
@@ -152,7 +152,8 @@ for(inb in 1:nb.seq){
       #}
       
       ## Split-kl bound
-      ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
+      #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
+      tmpBSkl <- PBSkl_Avg(NMC, sigma2)
       if(tmpBSkl$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBSkl$val
         bestSigma2[irepet,3,inb] <- sigma2
@@ -189,7 +190,8 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   varsbound <- apply(bound, 2, var)
   meanstest <- apply(Lntest, 2, mean)
   varstest <- apply(Lntest, 2, var)
-  print(paste(c(data_option, ". IF=", IF, ". ERM test error=", round(mean(LnERMtest),3), " (", round(var(LnERMtest),3), " )"),collapse=""))
+  meanssigma <- apply(bestSigma2, 2, mean)
+  print(paste(c(data_option, ". ERM test error=", round(mean(LnERMtest),3), " (", round(var(LnERMtest),3), " )"),collapse=""))
   print(paste(c("Maurer bound=", round(meansbound[1],3), " (", round(varsbound[1],3), ") ",
                 ", MGG Bound=",  round(meansbound[2],3), " (", round(varsbound[2],3), ") ",
                 #", TS bound=", round(meansbound[2],3), 
@@ -202,6 +204,12 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
                 #", Catoni test=", round(meanstest[4],3),
                 ", SplitKL test=", round(meanstest[3],3), " (", round(varstest[3],3), ") "
                 ),collapse = ""))
+  print(paste(c("Maurer sigma=", round(meanssigma[1],3),
+                ", MGG sigma=",  round(meanssigma[2],3),
+                #", TS sigma=", round(meanssigma[2],3), 
+                #", Catoni sigma=", round(meanssigma[4],3),
+                ", SplitKL sigma=", round(meanssigma[3],3)
+  ),collapse = ""))
 }else{
   MeanBKL <- apply(X = bound[,1,], MARGIN = 2, FUN = mean)
   MeanBProb <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)
