@@ -27,7 +27,8 @@ boundTS <- function(Ln, NMC, sigma2){
 }
 
 ### Maurer's bound (PBkl)
-boundPBKL <- function(Ln,sigma2){
+boundPBKL <- function(NMC,sigma2){
+  Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
   # Computing the KL 
   ratio <- initsigma2/(sigma2)
   KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])

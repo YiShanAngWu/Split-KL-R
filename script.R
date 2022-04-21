@@ -55,6 +55,7 @@ predictor <- function(x,theta) round(1/(1+exp(-x%*%theta)))
 source(paste(path, "gen-data.R", sep="/"))
 source(paste(path, "utils.R", sep="/"))
 source(paste(path, "PACBayes-MGG.R", sep="/"))
+source(paste(path, "PACBayes-kl.R", sep="/"))
 source(paste(path, "PACBayes-Others.R", sep="/"))
 source(paste(path, "PACBayes-Skl.R", sep="/"))
 str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
@@ -115,9 +116,10 @@ for(inb in 1:nb.seq){
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
 
       ## Maurer bound
-      ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(Ln, sigma2))
-      if(tmpBKL$val < bound[irepet,1,inb]){
-        bound[irepet,1,inb] <-  tmpBKL$val
+      tmpBkl <- PBkl(NMC, sigma2)
+      #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
+      if(tmpBkl$val < bound[irepet,1,inb]){
+        bound[irepet,1,inb] <-  tmpBkl$val
         #KL[irepet,inb] <-  tmpBKL$KL
         bestSigma2[irepet,1,inb] <- sigma2
       }
