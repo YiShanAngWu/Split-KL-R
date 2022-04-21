@@ -188,8 +188,6 @@ PBSkl_BWEL <- function(NMC, sigma2){
   return(list(val=val, KL=KL, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2))
 }
 
-
-
 ## Average + Excess
 PBSkl_Avg <- function(NMC, sigma2){
   nhalf <- ntrain/2

@@ -57,7 +57,8 @@ source(paste(path, "utils.R", sep="/"))
 source(paste(path, "PACBayes-MGG.R", sep="/"))
 source(paste(path, "PACBayes-kl.R", sep="/"))
 source(paste(path, "PACBayes-Skl.R", sep="/"))
-str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
+#str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
+str <- paste(c(data_option),collapse='-')
 
 # Initializing 
 #ifelse(grepl("synthetic",data_option, fixed=TRUE), nbRepet <- 10, nbRepet <- 5)
@@ -115,7 +116,7 @@ for(inb in 1:nb.seq){
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
 
       ## Maurer bound
-      tmpBkl <- PBkl_Avg(NMC, sigma2)
+      tmpBkl <- PBkl(NMC, sigma2)
       #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
@@ -125,7 +126,7 @@ for(inb in 1:nb.seq){
       
       ## MGG bound 
       #ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
-      tmpBMGG <- boundMGG_IF(NMC,sigma2)
+      tmpBMGG <- MGG(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
         #Vn[irepet,inb] <- tmpBMGG$vnTerm
@@ -153,7 +154,7 @@ for(inb in 1:nb.seq){
       
       ## Split-kl bound
       #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
-      tmpBSkl <- PBSkl_Avg(NMC, sigma2)
+      tmpBSkl <- PBSkl(NMC, sigma2)
       if(tmpBSkl$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBSkl$val
         bestSigma2[irepet,3,inb] <- sigma2
