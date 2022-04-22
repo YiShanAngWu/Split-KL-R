@@ -198,7 +198,7 @@ MGG_FWEL <- function(NMC, sigma2){
   
   # compute the bound
   val <- Term1 + RefTerm1
-  return(list(val=val,KL=KL1,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,KL=KL1, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
 ## Backward + Excess
@@ -255,7 +255,7 @@ MGG_BWEL <- function(NMC, sigma2){
   # compute the bound
   val <- Term2 + RefTerm2
   
-  return(list(val=val,KL=KL1,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,KL=KL1, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2,etaOpt=c(etaOpt1,etaOpt2)))
 }
 
 ## For Average + Excess
