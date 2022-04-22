@@ -61,14 +61,11 @@ source(paste(path, "PACBayes-Skl.R", sep="/"))
 str <- paste(c(data_option),collapse='-')
 
 # Initializing 
-#ifelse(grepl("synthetic",data_option, fixed=TRUE), nbRepet <- 10, nbRepet <- 5)
 nbRepet <- 20
 bound <- array(dim = c(nbRepet,3,nb.seq), data = Inf)
 Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,3,nb.seq), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
-#Vn <- VnPrim  <- VarTS  <- array(dim = c(nbRepet, nb.seq), data = NA)
-#comp <- KL <- array(dim = c(nbRepet, nb.seq), data = NA)
-#val1 <- val2 <- array(dim = c(nbRepet, nb.seq), data = NA)
+
 
 pb <- txtProgressBar(min = 0, max = nb.seq, style = 3)
 for(inb in 1:nb.seq){
@@ -120,7 +117,6 @@ for(inb in 1:nb.seq){
       #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
-        #KL[irepet,inb] <-  tmpBKL$KL
         bestSigma2[irepet,1,inb] <- sigma2
       }
       
@@ -129,28 +125,8 @@ for(inb in 1:nb.seq){
       tmpBMGG <- MGG_Avg(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
-        #Vn[irepet,inb] <- tmpBMGG$vnTerm
-        #VnPrim[irepet,inb] <- tmpBMGG$vnTermPrim
-        #comp[irepet,inb] <- tmpBMGG$KL
-        #val1[irepet,inb] <- tmpBMGG$val1
-        #val2[irepet,inb] <- tmpBMGG$val2
         bestSigma2[irepet,2,inb] <- sigma2
       }
-      
-      ## TS bound
-      #ifelse(IF,tmpBEB<- boundTS_half(Ln,NMC,sigma2),tmpBEB<-boundPBEB(NMC,sigma2))
-      #if(tmpBEB$val < bound[irepet,2,inb]){
-      #  bound[irepet,2,inb] <- tmpBEB$val
-      #  VarTS[irepet,inb] <- tmpBEB$VarEB
-      #  bestSigma2[irepet,2,inb] <- sigma2
-      #}
-      
-      ## Catoni bound
-      #ifelse(IF, tmpBCT <-boundCatoni_half(NMC,sigma2),tmpBCT <-boundCatoni(Ln,sigma2))
-      #if(tmpBCT$val < bound[irepet,4,inb]){
-      #  bound[irepet,4,inb] <- tmpBCT$val
-      #  bestSigma2[irepet,4,inb] <- sigma2
-      #}
       
       ## Split-kl bound
       #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
@@ -174,13 +150,6 @@ for(inb in 1:nb.seq){
     LnERMtest <- LnERMtest[,1]
     Lntrain <- Lntrain[,,1]
     Lntest <- Lntest[,,1]
-    #Vn <- Vn[,1]
-    #VnPrim <- VnPrim[,1]
-    #VarTS <- VarTS[,1]
-    #comp <- comp[,1]
-    #KL <- KL[,1]
-    #val1 <- val1[,1]
-    #val2 <- val2[,1]
     break
   }
 }
@@ -195,33 +164,23 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   print(paste(c(data_option, ". ERM test error=", round(mean(LnERMtest),3), " (", round(var(LnERMtest),3), " )"),collapse=""))
   print(paste(c("Maurer bound=", round(meansbound[1],3), " (", round(varsbound[1],3), ") ",
                 ", MGG Bound=",  round(meansbound[2],3), " (", round(varsbound[2],3), ") ",
-                #", TS bound=", round(meansbound[2],3), 
-             #", Catoni bound=", round(meansbound[4],3),
              ", SplitKL bound=", round(meansbound[3],3), " (", round(varsbound[3],3), ") "
              ),collapse = ""))
   print(paste(c("Maurer test=", round(meanstest[1],3), " (", round(varstest[1],3), ") ",
                 ", MGG test=",  round(meanstest[2],3), " (", round(varstest[2],3), ") ",
-                #", TS test=", round(meanstest[2],3), 
-                #", Catoni test=", round(meanstest[4],3),
                 ", SplitKL test=", round(meanstest[3],3), " (", round(varstest[3],3), ") "
                 ),collapse = ""))
   print(paste(c("Maurer sigma=", round(meanssigma[1],3),
                 ", MGG sigma=",  round(meanssigma[2],3),
-                #", TS sigma=", round(meanssigma[2],3), 
-                #", Catoni sigma=", round(meanssigma[4],3),
                 ", SplitKL sigma=", round(meanssigma[3],3)
   ),collapse = ""))
 }else{
   MeanBKL <- apply(X = bound[,1,], MARGIN = 2, FUN = mean)
   MeanBProb <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)
-  #MeanBTS <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)
-  #MeanBCatoni <- apply(X = bound[,4,], MARGIN = 2, FUN = mean)
   MeanBSkl <- apply(X = bound[,3,], MARGIN = 2, FUN = mean)
   
   ## Saving bound 
   writeMat(paste(c(path, "/save/results_",str,".mat"), collapse = ""), labpcexport = bound)
-  #writeMat(paste(c(path, "/save/Vn_",str,".mat"), collapse = ""), labpcexport = Vn)
-  #writeMat(paste(c(path, "/save/VnPrim_",str,".mat"), collapse = ""), labpcexport = VnPrim)
   writeMat(paste(c(path, "/save/LnERMtrain_",str,".mat"), collapse = ""), labpcexport = LnERMtrain)
 }
 
