@@ -198,7 +198,9 @@ MGG_FWEL <- function(NMC, sigma2){
   
   # compute the bound
   val <- Term1 + RefTerm1
-  return(list(val=val,KL=KL1, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,KL=KL1, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0,
+              ExL1=Ln1, ExL2=0, RefL1=Ln2, RefL2=0,
+              etaOpt=c(etaOpt1,etaOpt2)))
 }
 
 ## Backward + Excess
@@ -235,6 +237,7 @@ MGG_BWEL <- function(NMC, sigma2){
   losses <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERMs[,2])), nrow=NMC, ncol=nhalf, byrow=TRUE))
   ## compute excess loss
   Diffloss <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),], theta_samplesTS))-losses
+
   ## compute loss & variance
   Ln1 <- mean(Diffloss)
   Vn1 <- mean(Diffloss^2)
@@ -255,7 +258,9 @@ MGG_BWEL <- function(NMC, sigma2){
   # compute the bound
   val <- Term2 + RefTerm2
   
-  return(list(val=val,KL=KL1, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,KL=KL1, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2,
+              ExL1=0, ExL2=Ln1, RefL1=0, RefL2=Ln2,
+              etaOpt=c(etaOpt1,etaOpt2)))
 }
 
 ## For Average + Excess

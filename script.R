@@ -66,6 +66,8 @@ bound <- array(dim = c(nbRepet,3,nb.seq), data = Inf)
 Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,3,nb.seq), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
 Term1 <- Term2 <- RefTerm1 <- RefTerm2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
+ExL1 <- ExL2 <- RefL1 <- RefL2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
+ExL1P <- ExL1M <- ExL2P <- ExL2M <- array(dim = c(nbRepet, nb.seq), data = NA) # for Skl
 
 pb <- txtProgressBar(min = 0, max = nb.seq, style = 3)
 for(inb in 1:nb.seq){
@@ -121,6 +123,10 @@ for(inb in 1:nb.seq){
         Term2[irepet,1,inb] <-  tmpBkl$Term2
         RefTerm1[irepet,1,inb] <-  tmpBkl$RefTerm1
         RefTerm2[irepet,1,inb] <-  tmpBkl$RefTerm2
+        ExL1[irepet,1,inb] <-  tmpBkl$ExL1
+        ExL2[irepet,1,inb] <-  tmpBkl$ExL2
+        RefL1[irepet,1,inb] <-  tmpBkl$RefL1
+        RefL2[irepet,1,inb] <-  tmpBkl$RefL2
         bestSigma2[irepet,1,inb] <- sigma2
       }
       
@@ -133,6 +139,10 @@ for(inb in 1:nb.seq){
         Term2[irepet,2,inb] <-  tmpBMGG$Term2
         RefTerm1[irepet,2,inb] <-  tmpBMGG$RefTerm1
         RefTerm2[irepet,2,inb] <-  tmpBMGG$RefTerm2
+        ExL1[irepet,2,inb] <-  tmpBMGG$ExL1
+        ExL2[irepet,2,inb] <-  tmpBMGG$ExL2
+        RefL1[irepet,2,inb] <-  tmpBMGG$RefL1
+        RefL2[irepet,2,inb] <-  tmpBMGG$RefL2
         bestSigma2[irepet,2,inb] <- sigma2
       }
       
@@ -145,6 +155,14 @@ for(inb in 1:nb.seq){
         Term2[irepet,3,inb] <-  tmpBSkl$Term2
         RefTerm1[irepet,3,inb] <-  tmpBSkl$RefTerm1
         RefTerm2[irepet,3,inb] <-  tmpBSkl$RefTerm2
+        ExL1[irepet,3,inb] <-  tmpBSkl$ExL1
+        ExL2[irepet,3,inb] <-  tmpBSkl$ExL2
+        RefL1[irepet,3,inb] <-  tmpBSkl$RefL1
+        RefL2[irepet,3,inb] <-  tmpBSkl$RefL2
+        ExL1P[irepet,inb] <- tmpBSkl$ExL1P
+        ExL1M[irepet,inb] <- tmpBSkl$ExL1M
+        ExL2P[irepet,inb] <- tmpBSkl$ExL2P
+        ExL2M[irepet,inb] <- tmpBSkl$ExL2M
         bestSigma2[irepet,3,inb] <- sigma2
       }
     }
@@ -161,6 +179,14 @@ for(inb in 1:nb.seq){
     Term2 <- Term2[,,1]
     RefTerm1 <- RefTerm1[,,1]
     RefTerm2 <- RefTerm2[,,1]
+    ExL1 <- ExL1[,,1]
+    ExL2 <- ExL2[,,1]
+    RefL1 <- RefL1[,,1]
+    RefL2 <- RefL2[,,1]
+    ExL1P <- ExL1P[,1]
+    ExL1M <- ExL1M[,1]
+    ExL2P <- ExL2P[,1]
+    ExL2M <- ExL2M[,1]
     bestSigma2 <- bestSigma2[,,1]
     LnERMtrain <- LnERMtrain[,1]
     LnERMtest <- LnERMtest[,1]
@@ -181,6 +207,14 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   meansTerm2 <- apply(Term2, 2, mean)
   meansRefTerm1 <- apply(RefTerm1, 2, mean)
   meansRefTerm2 <- apply(RefTerm2, 2, mean)
+  meansExL1 <- apply(ExL1, 2, mean)
+  meansExL2 <- apply(ExL2, 2, mean)
+  meansRefL1 <- apply(RefL1, 2, mean)
+  meansRefL2 <- apply(RefL2, 2, mean)
+  meansExL1P <- mean(ExL1P)
+  meansExL1M <- mean(ExL1M)
+  meansExL2P <- mean(ExL2P)
+  meansExL2M <- mean(ExL2M)
   print(paste(c(data_option, ". ERM test error=", round(mean(LnERMtest),3), " (", round(var(LnERMtest),3), " )"),collapse=""))
   print(paste(c("Maurer bound=", round(meansbound[1],3), " (", round(varsbound[1],3), ") ",
                 ", MGG Bound=",  round(meansbound[2],3), " (", round(varsbound[2],3), ") ",
@@ -195,8 +229,12 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
                 ", SplitKL sigma=", round(meanssigma[3],3)
                 ),collapse = ""))
   print(paste(c("Maurer: Term1=", round(meansTerm1[1],3), ", Term2=", round(meansTerm2[1],3), ", RefTerm1=", round(meansRefTerm1[1],3), ", RefTerm2=", round(meansRefTerm2[1],3)),collapse = ""))
+  print(paste(c("Maurer: ExL1=", round(meansExL1[1],3), ", ExL2=", round(meansExL2[1],3), ", RefL1=", round(meansRefL1[1],3), ", RefL2=", round(meansRefL2[1],3)),collapse = ""))
   print(paste(c("MGG: Term1=",  round(meansTerm1[2],3), ", Term2=", round(meansTerm2[2],3), ", RefTerm1=", round(meansRefTerm1[2],3), ", RefTerm2=", round(meansRefTerm2[2],3)),collapse = ""))
+  print(paste(c("MGG: ExL1=", round(meansExL1[2],3), ", ExL2=", round(meansExL2[2],3), ", RefL1=", round(meansRefL1[2],3), ", RefL2=", round(meansRefL2[2],3)),collapse = ""))
   print(paste(c("SplitKL: Term1=", round(meansTerm1[3],3), ", Term2=", round(meansTerm2[3],3), ", RefTerm1=", round(meansRefTerm1[3],3), ", RefTerm2=", round(meansRefTerm2[3],3)),collapse = ""))
+  print(paste(c("SplitKL: ExL1=", round(meansExL1[3],3), ", ExL2=", round(meansExL2[3],3), ", RefL1=", round(meansRefL1[3],3), ", RefL2=", round(meansRefL2[3],3)),collapse = ""))
+  print(paste(c("SplitKL: ExL1P=", round(meansExL1P,3), ", ExL1M=", round(meansExL1M,3), ", ExL2P=", round(meansExL2P,3), ", ExL2M=", round(meansExL2M,3)),collapse = ""))
 }else{
   MeanBKL <- apply(X = bound[,1,], MARGIN = 2, FUN = mean)
   MeanBProb <- apply(X = bound[,2,], MARGIN = 2, FUN = mean)

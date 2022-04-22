@@ -68,7 +68,8 @@ PBkl_FWEL <- function(NMC, sigma2){
   
   # compute the bound
   val <- Term1 + RefTerm1
-  return(list(val=val,KL=KL1, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0))
+  return(list(val=val,KL=KL1, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0,
+              ExL1=mean(Diffloss1), ExL2=0, RefL1=mean(loss1), RefL2=0))
 }
 
 ## Backward + Excess
@@ -82,7 +83,7 @@ PBkl_BWEL <- function(NMC, sigma2){
   loss2 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERMs[,2])), nrow=NMC, ncol=nhalf, byrow=TRUE))
   # compute excess loss
   Diffloss2 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-loss2
-  
+
   # compute Delta(h,h_S2) term
   KL2 <- KLGauss(ERMs[,3], ERMs[,2], sigma2)
   RHS2 <- (KL2 + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
@@ -94,7 +95,8 @@ PBkl_BWEL <- function(NMC, sigma2){
   
   # compute the bound
   val <- Term2 + RefTerm2
-  return(list(val=val,KL=KL2, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2))
+  return(list(val=val,KL=KL2, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2,
+              ExL1=0, ExL2=mean(Diffloss2), RefL1=0, RefL2=mean(loss2)))
 }
 
 ## Average + Excess

@@ -147,7 +147,9 @@ PBSkl_FWEL <- function(NMC, sigma2){
   
   val <- Term1 + RefTerm1
   
-  return(list(val=val, KL=KL, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0))
+  return(list(val=val, KL=KL, Term1=Term1, Term2=0, RefTerm1=RefTerm1, RefTerm2=0,
+              ExL1=mean(Diffloss), ExL2=0, RefL1=mean(losses), RefL2=0,
+              ExL1P=mean(DifflossP), ExL1M=mean(DifflossM), ExL2P=0, ExL2M=0))
 }
 
 ## Backward + Excess
@@ -161,7 +163,7 @@ PBSkl_BWEL <- function(NMC, sigma2){
   losses <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERMs[,2])), nrow=NMC, ncol=nhalf, byrow=TRUE))
   # compute excess loss
   Diffloss <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),], theta_samplesTS))-losses
-  
+
   # split excess loss
   mu <- 0
   DifflossP <- apply(Diffloss, 1:2, function(x) max(c(0, x-mu)))
@@ -185,7 +187,9 @@ PBSkl_BWEL <- function(NMC, sigma2){
   
   val <- Term2 + RefTerm2
   
-  return(list(val=val, KL=KL, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2))
+  return(list(val=val, KL=KL, Term1=0, Term2=Term2, RefTerm1=0, RefTerm2=RefTerm2,
+              ExL1=0, ExL2=mean(Diffloss), RefL1=0, RefL2=mean(losses),
+              ExL1P=0, ExL1M=0, ExL2P=mean(DifflossP), ExL2M=mean(DifflossM)))
 }
 
 ## Average + Excess
