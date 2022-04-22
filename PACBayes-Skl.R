@@ -233,5 +233,7 @@ PBSkl_Avg <- function(NMC, sigma2){
   RefTerm2 <- bin_inv_sup(nhalf, nhalf*mean(loss2), Ndelta)
   
   val <- mu + (1-mu)*PlusTerm + (mu+1)*MinusTerm + 0.5*(RefTerm1+RefTerm2)
-  return(list(val=val, KL=KL, Term1=PlusTerm, Term2=MinusTerm, RefTerm1=RefTerm1, RefTerm2=RefTerm2))
+  return(list(val=val, KL=KL, Term1=PlusTerm, Term2=MinusTerm, RefTerm1=RefTerm1, RefTerm2=RefTerm2,
+              ExL1=mean(Diffloss[(ntrain/2+1):ntrain,]), ExL2=mean(Diffloss[1:(ntrain/2),]), RefL1=mean(loss1), RefL2=mean(loss2),
+              ExL1P=mean(DifflossP[(ntrain/2+1):ntrain,]), ExL1M=mean(DifflossM[(ntrain/2+1):ntrain,]), ExL2P=mean(DifflossP[1:(ntrain/2),]), ExL2M=mean(DifflossM[1:(ntrain/2),])))
 }
