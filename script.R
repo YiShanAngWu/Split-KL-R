@@ -27,8 +27,7 @@ distribution <- "gaussian"        # No other distribution is supported currently
 lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
-#half <-  F                        # Set to true so that half the data is used to build a prior for PACBayes-Others (i.e. not our method)
-#IF <-  F                          # Set to true so that Informed Prior is used for all methods
+boundtype <- "FW"
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -115,7 +114,7 @@ for(inb in 1:nb.seq){
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
 
       ## Maurer bound
-      tmpBkl <- PBkl_FWEL(NMC, sigma2)
+      tmpBkl <- PBkl_FW(NMC, sigma2)
       #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
@@ -132,7 +131,7 @@ for(inb in 1:nb.seq){
       
       ## MGG bound 
       #ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
-      tmpBMGG <- MGG_FWEL(NMC,sigma2)
+      tmpBMGG <- MGG_FW(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
         Term1[irepet,2,inb] <-  tmpBMGG$Term1
@@ -148,7 +147,7 @@ for(inb in 1:nb.seq){
       
       ## Split-kl bound
       #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
-      tmpBSkl <- PBSkl_FWEL(NMC, sigma2)
+      tmpBSkl <- PBSkl_FW(NMC, sigma2)
       if(tmpBSkl$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBSkl$val
         Term1[irepet,3,inb] <-  tmpBSkl$Term1
@@ -219,7 +218,7 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
   
   # write
   if(!dir.exists("out")){dir.create(file.path(path,"out"), showWarnings=F)}
-  outpath <- paste(c(path,"\\out\\",data_option,".csv"),collapse="")
+  outpath <- paste(c(path,"\\out\\",data_option,"-",boundtype,".csv"),collapse="")
   write.csv(Table,outpath, row.names=FALSE)
 }
 

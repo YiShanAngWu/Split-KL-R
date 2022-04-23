@@ -109,7 +109,8 @@ MGG_FW <- function(NMC, sigma2){
   # compute the bound
   val <- Ln + val1
   
-  return(list(val=val,KL=KL,etaOpt=c(etaOpt,Inf)))
+  return(list(val=val,KL=KL, Term1=val, Term2=0, RefTerm1=0, RefTerm2=0,
+              ExL1=Ln, ExL2=0, RefL1=0, RefL2=0,etaOpt=c(etaOpt,Inf)))
 }
 
 ## Backward
@@ -142,7 +143,8 @@ MGG_BW <- function(NMC, sigma2){
   # compute the bound
   val <- Ln + val1
   
-  return(list(val=val,KL=KL,etaOpt=c(etaOpt,Inf)))
+  return(list(val=val,KL=KL, Term1=0, Term2=val, RefTerm1=0, RefTerm2=0,
+              ExL1=0, ExL2=Ln, RefL1=0, RefL2=0,etaOpt=c(etaOpt,Inf)))
 }
 
 ## Forward + Excess
@@ -334,7 +336,9 @@ MGG_Avg <- function(NMC, sigma2){
   val2 <- tmp2$val
   
   val <- Ln + val1 + val2
-  return(list(val=val,KL=KL1,etaOpt=c(etaOpt1,etaOpt2)))
+  return(list(val=val,KL=KL1, Term1=0, Term2=0, RefTerm1=0, RefTerm2=0,
+              ExL1=0, ExL2=0, RefL1=0, RefL2=0,
+              etaOpt=c(etaOpt1,etaOpt2)))
 }
 
 ## NOT USING!!

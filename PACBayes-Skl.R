@@ -71,7 +71,9 @@ PBSkl_FW <- function(NMC, sigma2){
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   val <- mu + (1-mu)*PlusTerm - (mu-0)*MinusTerm
-  return(list(val=val, KL=KL, PlusTerm=PlusTerm, MinusTerm=MinusTerm, RefTerm1=0, RefTerm2=0))
+  return(list(val=val, KL=KL, Term1=val, Term2=0, RefTerm1=0, RefTerm2=0,
+              ExL1=mean(Lnloss), ExL2=0, RefL1=0, RefL2=0,
+              ExL1P=mean(LnlossP), ExL1M=mean(LnlossP), ExL2P=0, ExL2M=0))
 }
 
 ## Backward
@@ -109,7 +111,9 @@ PBSkl_BW <- function(NMC, sigma2){
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   val <- mu + (1-mu)*PlusTerm - (mu-0)*MinusTerm
-  return(list(val=val, KL=KL, PlusTerm=PlusTerm, MinusTerm=MinusTerm, RefTerm1=0, RefTerm2=0))
+  return(list(val=val, KL=KL, Term1=0, Term2=val, RefTerm1=0, RefTerm2=0,
+              ExL1=0, ExL2=mean(Lnloss), RefL1=0, RefL2=0,
+              ExL1P=0, ExL1M=0, ExL2P=mean(LnlossP), ExL2M=mean(LnlossP)))
 }
 
 ## Forward + Excess

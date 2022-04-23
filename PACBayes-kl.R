@@ -27,7 +27,8 @@ PBkl_FW <- function(NMC, sigma2){
   RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   val <- kl_inv_sup(Ln, RHS)
   
-  return(list(val=val,KL=KL))
+  return(list(val=val,KL=KL, Term1=val, Term2=0, RefTerm1=0, RefTerm2=0,
+              ExL1=Ln, ExL2=0, RefL1=0, RefL2=0))
 }
 
 ## Backward
@@ -42,7 +43,8 @@ PBkl_BW <- function(NMC, sigma2){
   RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   val <- kl_inv_sup(Ln, RHS)
   
-  return(list(val=val,KL=KL))
+  return(list(val=val,KL=KL, Term1=0, Term2=val, RefTerm1=0, RefTerm2=0,
+              ExL1=0, ExL2=Ln, RefL1=0, RefL2=0))
 }
 
 ## Forward + Excess
