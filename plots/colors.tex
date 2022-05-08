@@ -1,0 +1,27 @@
+\usepackage{mathtools}
+
+\usepackage{amssymb}
+\usepackage{xifthen}
+\usepackage{xparse}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{multirow}
+
+\usepackage{xcolor}
+%\definecolor{colPBkl}{rgb}{0.2, 0.6, 0.2}
+
+\DeclareMathOperator{\trainset}{T}
+\DeclareMathOperator{\oobset}{S}
+\DeclareMathOperator{\testset}{S_{test}}
+
+\newcommand{\lrs}[1]{\left [#1 \right]}
+\DeclareMathOperator{\MV}{MV}
+\newcommand{\dataset}[1]{\textsc{#1}}
+\NewDocumentCommand{\E}{o}{\mathbb E\IfValueT{#1}{\lrs{#1}}}
+\newcommand{\B}{\operatorname{B}}
+
+\newcommand{\PBkl}{\operatorname{PBkl}}
+\newcommand{\MGG}{\operatorname{MGG}}
+\newcommand{\Skl}{\operatorname{Skl}}
+\newcommand{\FW}{\operatorname{FW}}
+\newcommand{\FWEL}{\operatorname{FWEL}}

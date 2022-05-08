@@ -27,7 +27,7 @@ distribution <- "gaussian"        # No other distribution is supported currently
 lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
-boundtype <- "FW"
+boundtype <- "FWEL"
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -64,9 +64,9 @@ nbRepet <- 5
 bound <- array(dim = c(nbRepet,3,nb.seq), data = Inf)
 Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,3,nb.seq), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
-Term1 <- Term2 <- RefTerm1 <- RefTerm2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
-ExL1 <- ExL2 <- RefL1 <- RefL2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
-ExL1P <- ExL1M <- ExL2P <- ExL2M <- array(dim = c(nbRepet, nb.seq), data = NA) # for Skl
+Term1 <- Term2 <- ExTerm1 <- ExTerm2 <- RefTerm1 <- RefTerm2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
+L1 <- L2 <- ExL1 <- ExL2 <- RefL1 <- RefL2 <- ExL1_0rate <- ExL2_0rate <- array(dim = c(nbRepet,3,nb.seq), data = NA)
+L1P <- L1M <- L2P <- L2M <- ExL1P <- ExL1M <- ExL2P <- ExL2M <- muOpt <- array(dim = c(nbRepet, nb.seq), data = NA) # for Skl
 
 pb <- txtProgressBar(min = 0, max = nb.seq, style = 3)
 for(inb in 1:nb.seq){
@@ -112,18 +112,34 @@ for(inb in 1:nb.seq){
       ## Compute the shared empirical error
       theta_samplesTS <- get_sample(type = distribution, mean=ERMs[,3],variance2=sigma2, NMC)
       Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
+      
+      ## Compute Excess Losses & Reference Losses
+      ### For FW/BW without Excess Loss
+      Loss1 <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS))
+      Loss2 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))
+      ### For Excess Loss
+      Refloss1 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERMs[,1])), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
+      Refloss2 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERMs[,2])), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
+      Excessloss1 <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS))-Refloss1
+      Excessloss2 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-Refloss2
 
       ## Maurer bound
-      tmpBkl <- PBkl_FW(NMC, sigma2)
+      tmpBkl <- PBkl_FWEL(NMC, sigma2)
       #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
         Term1[irepet,1,inb] <-  tmpBkl$Term1
         Term2[irepet,1,inb] <-  tmpBkl$Term2
+        ExTerm1[irepet,1,inb] <-  tmpBkl$ExTerm1
+        ExTerm2[irepet,1,inb] <-  tmpBkl$ExTerm2
         RefTerm1[irepet,1,inb] <-  tmpBkl$RefTerm1
         RefTerm2[irepet,1,inb] <-  tmpBkl$RefTerm2
+        L1[irepet,1,inb] <-  tmpBkl$L1
+        L2[irepet,1,inb] <-  tmpBkl$L2
         ExL1[irepet,1,inb] <-  tmpBkl$ExL1
         ExL2[irepet,1,inb] <-  tmpBkl$ExL2
+        ExL1_0rate[irepet,1,inb] <- tmpBkl$ExL1_0rate
+        ExL2_0rate[irepet,1,inb] <- tmpBkl$ExL2_0rate
         RefL1[irepet,1,inb] <-  tmpBkl$RefL1
         RefL2[irepet,1,inb] <-  tmpBkl$RefL2
         bestSigma2[irepet,1,inb] <- sigma2
@@ -131,15 +147,21 @@ for(inb in 1:nb.seq){
       
       ## MGG bound 
       #ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
-      tmpBMGG <- MGG_FW(NMC,sigma2)
+      tmpBMGG <- MGG_FWEL(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
         Term1[irepet,2,inb] <-  tmpBMGG$Term1
         Term2[irepet,2,inb] <-  tmpBMGG$Term2
+        ExTerm1[irepet,2,inb] <-  tmpBMGG$ExTerm1
+        ExTerm2[irepet,2,inb] <-  tmpBMGG$ExTerm2
         RefTerm1[irepet,2,inb] <-  tmpBMGG$RefTerm1
         RefTerm2[irepet,2,inb] <-  tmpBMGG$RefTerm2
+        L1[irepet,2,inb] <-  tmpBMGG$L1
+        L2[irepet,2,inb] <-  tmpBMGG$L2
         ExL1[irepet,2,inb] <-  tmpBMGG$ExL1
         ExL2[irepet,2,inb] <-  tmpBMGG$ExL2
+        ExL1_0rate[irepet,2,inb] <- tmpBMGG$ExL1_0rate
+        ExL2_0rate[irepet,2,inb] <- tmpBMGG$ExL2_0rate
         RefL1[irepet,2,inb] <-  tmpBMGG$RefL1
         RefL2[irepet,2,inb] <-  tmpBMGG$RefL2
         bestSigma2[irepet,2,inb] <- sigma2
@@ -147,22 +169,33 @@ for(inb in 1:nb.seq){
       
       ## Split-kl bound
       #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
-      tmpBSkl <- PBSkl_FW(NMC, sigma2)
+      tmpBSkl <- PBSkl_FWEL(NMC, sigma2)
       if(tmpBSkl$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBSkl$val
         Term1[irepet,3,inb] <-  tmpBSkl$Term1
         Term2[irepet,3,inb] <-  tmpBSkl$Term2
+        ExTerm1[irepet,3,inb] <-  tmpBSkl$ExTerm1
+        ExTerm2[irepet,3,inb] <-  tmpBSkl$ExTerm2
         RefTerm1[irepet,3,inb] <-  tmpBSkl$RefTerm1
         RefTerm2[irepet,3,inb] <-  tmpBSkl$RefTerm2
+        L1[irepet,3,inb] <-  tmpBSkl$L1
+        L2[irepet,3,inb] <-  tmpBSkl$L2
         ExL1[irepet,3,inb] <-  tmpBSkl$ExL1
         ExL2[irepet,3,inb] <-  tmpBSkl$ExL2
+        ExL1_0rate[irepet,3,inb] <- tmpBSkl$ExL1_0rate
+        ExL2_0rate[irepet,3,inb] <- tmpBSkl$ExL2_0rate
         RefL1[irepet,3,inb] <-  tmpBSkl$RefL1
         RefL2[irepet,3,inb] <-  tmpBSkl$RefL2
+        L1P[irepet,inb] <- tmpBSkl$L1P
+        L1M[irepet,inb] <- tmpBSkl$L1M
+        L2P[irepet,inb] <- tmpBSkl$L2P
+        L2M[irepet,inb] <- tmpBSkl$L2M
         ExL1P[irepet,inb] <- tmpBSkl$ExL1P
         ExL1M[irepet,inb] <- tmpBSkl$ExL1M
         ExL2P[irepet,inb] <- tmpBSkl$ExL2P
         ExL2M[irepet,inb] <- tmpBSkl$ExL2M
         bestSigma2[irepet,3,inb] <- sigma2
+        muOpt[irepet,inb] <- tmpBSkl$muOpt
       }
     }
     for(mtd in 1:3){
@@ -176,17 +209,28 @@ for(inb in 1:nb.seq){
     bound <- bound[,,1]
     Term1 <- Term1[,,1]
     Term2 <- Term2[,,1]
+    ExTerm1 <- ExTerm1[,,1]
+    ExTerm2 <- ExTerm2[,,1]
     RefTerm1 <- RefTerm1[,,1]
     RefTerm2 <- RefTerm2[,,1]
+    L1 <- L1[,,1]
+    L2 <- L2[,,1]
     ExL1 <- ExL1[,,1]
     ExL2 <- ExL2[,,1]
+    ExL1_0rate <- ExL1_0rate[,,1]
+    ExL2_0rate <- ExL2_0rate[,,1]
     RefL1 <- RefL1[,,1]
     RefL2 <- RefL2[,,1]
+    L1P <- L1P[,1]
+    L1M <- L1M[,1]
+    L2P <- L2P[,1]
+    L2M <- L2M[,1]
     ExL1P <- ExL1P[,1]
     ExL1M <- ExL1M[,1]
     ExL2P <- ExL2P[,1]
     ExL2M <- ExL2M[,1]
     bestSigma2 <- bestSigma2[,,1]
+    muOpt <- muOpt[,1]
     LnERMtrain <- LnERMtrain[,1]
     LnERMtest <- LnERMtest[,1]
     Lntrain <- Lntrain[,,1]
@@ -198,22 +242,32 @@ str <- paste(c(str,d),collapse="-")
 
 if(!grepl("synthetic",data_option, fixed=TRUE)){
   Table <- data.frame(LnERMtrain,LnERMtest,Lntrain,Lntest,bestSigma2,bound,
-                      ExL1,Term1,ExL2,Term2,RefL1,RefTerm1,RefL2,RefTerm2,
-                      ExL1P,ExL1M,ExL2P,ExL2M)
+                      L1, Term1, L2, Term2,
+                      ExL1,ExTerm1,ExL2,ExTerm2,ExL1_0rate,ExL2_0rate,
+                      RefL1,RefTerm1,RefL2,RefTerm2,
+                      L1P,L1M,L2P,L2M,
+                      ExL1P,ExL1M,ExL2P,ExL2M,muOpt)
   colnames(Table) <- c("LnERMtrain","LnERMtest",
                        "Lntrain_PBkl","Lntrain_MGG","Lntrain_Skl",
                        "Lntest_PBkl","Lntest_MGG","Lntest_Skl",
                        "bestSigma2_PBkl","bestSigma2_MGG","bestSigma2_Skl",
                        "bound_PBkl","bound_MGG","bound_Skl",
-                       "ExL1_PBkl","ExL1_MGG","ExL1_Skl",
+                       "L1_PBkl","L1_MGG","L1_Skl",
                        "Term1_PBkl","Term1_MGG","Term1_Skl",
-                       "ExL2_PBkl","ExL2_MGG","ExL2_Skl",
+                       "L2_PBkl","L2_MGG","L2_Skl",
                        "Term2_PBkl","Term2_MGG","Term2_Skl",
+                       "ExL1_PBkl","ExL1_MGG","ExL1_Skl",
+                       "ExTerm1_PBkl","ExTerm1_MGG","ExTerm1_Skl",
+                       "ExL2_PBkl","ExL2_MGG","ExL2_Skl",
+                       "ExTerm2_PBkl","ExTerm2_MGG","ExTerm2_Skl",
+                       "ExL1_0rate_PBkl","ExL1_0rate_MGG","ExL1_0rate_Skl",
+                       "ExL2_0rate_PBkl","ExL2_0rate_MGG","ExL2_0rate_Skl",
                        "RefL1_PBkl","RefL1_MGG","RefL1_Skl",
-                       "RefTerm1_PBkl","RefTerm2_MGG","RefTerm2_Skl",
+                       "RefTerm1_PBkl","RefTerm1_MGG","RefTerm1_Skl",
                        "RefL2_PBkl","RefL2_MGG","RefL2_Skl",
                        "RefTerm2_PBkl","RefTerm2_MGG","RefTerm2_Skl",
-                       "ExL1P","ExL1M","ExL2P","ExL2M")
+                       "L1P","L1M","L2P","L2M",
+                       "ExL1P","ExL1M","ExL2P","ExL2M","muOpt")
   print(Table)
   
   # write
