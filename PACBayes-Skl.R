@@ -33,7 +33,9 @@ PBSkl <- function(NMC, sigma2){
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   val <- mu + (1-mu)*PlusTerm - (mu-0)*MinusTerm
-  return(list(val=val, KL=KL, PlusTerm=PlusTerm, MinusTerm=MinusTerm, RefTerm1=0, RefTerm2=0))
+  return(list(val=val, KL=KL, Term1=val, Term2=0,  ExTerm1=0, ExTerm2=0, RefTerm1=0, RefTerm2=0,
+              L1=mean(Lnloss), L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,
+              L1P=mean(LnlossP), L1M=mean(LnlossM), L2P=0, L2M=0, ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
 ## Forward
@@ -69,7 +71,7 @@ PBSkl_FW <- function(NMC, sigma2){
   
   val <- mu + (1-mu)*PlusTerm - (mu-0)*MinusTerm
   return(list(val=val, KL=KL, Term1=val, Term2=0,  ExTerm1=0, ExTerm2=0, RefTerm1=0, RefTerm2=0,
-              L1=mean(Loss1), L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0,
+              L1=mean(Loss1), L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,
               L1P=mean(Loss1P), L1M=mean(Loss1M), L2P=0, L2M=0, ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
@@ -106,7 +108,7 @@ PBSkl_BW <- function(NMC, sigma2){
   
   val <- mu + (1-mu)*PlusTerm - (mu-0)*MinusTerm
   return(list(val=val, KL=KL, Term1=0, Term2=val,  ExTerm1=0, ExTerm2=0, RefTerm1=0, RefTerm2=0,
-              L1=0, L2=mean(Loss2), ExL1=0, ExL2=0, RefL1=0, RefL2=0,
+              L1=0, L2=mean(Loss2), ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,
               L1P=0, L1M=0, L2P=mean(Loss2P), L2M=mean(Loss2M), ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
@@ -128,7 +130,15 @@ PBSkl_FWEL <- function(NMC, sigma2){
   # compute ExTerm1
   ## compute complexity
   KL <- KLGauss(ERMs[,3], ERMs[,1], sigma2)
-  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
+  # Computing the KL 
+  #ratio <- initsigma2/(sigma2)
+  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
+  
+  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
+  RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf # conjecture
+  #RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf # no informed prior
+  #RHS <- (KL + log(1/Ndelta))/nhalf # no informed prior, conjecture
+  
   ## compute Plus Term
   PlusLHS <- mean(Excessloss1P)/(b-mu)
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
@@ -137,6 +147,7 @@ PBSkl_FWEL <- function(NMC, sigma2){
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   ExTerm1 <- mu + (b-mu)*PlusTerm - (mu-a)*MinusTerm
+  ExTerm1 <- min(c(b, ExTerm1))
 
   # RefTerm1
   RefL1 <- mean(Refloss1)
@@ -176,6 +187,7 @@ PBSkl_BWEL <- function(NMC, sigma2){
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   ExTerm2 <- mu + (b-mu)*PlusTerm - (mu-a)*MinusTerm
+  ExTerm2 <- min(c(b, ExTerm2))
   
   # RefTerm2
   RefL2 <- mean(Refloss2)
@@ -188,47 +200,63 @@ PBSkl_BWEL <- function(NMC, sigma2){
 }
 
 ## Average + Excess
-PBSkl_Avg <- function(NMC, sigma2){
+PBSkl_AvgEx <- function(NMC, sigma2){
   nhalf <- ntrain/2
   Ndelta <- delta/4
   b <- 1
   a <- -1
 
-  # compute reference loss
-  loss2 <- t(matrix(loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],ERMs[,2])), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
-  loss1 <- t(matrix(loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,],ERMs[,1])), nrow=NMC, ncol=ntrain/2, byrow=TRUE))
-  
-  # compute excess loss
-  Diffloss <- matrix(nrow = ntrain, ncol = NMC, data = NA)
-  Diffloss[1:(ntrain/2),] <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-loss2
-  Diffloss[(ntrain/2+1):ntrain,] <- loss(Ytrain[(ntrain/2+1):ntrain],predictor(Xtrain[(ntrain/2+1):ntrain,], theta_samplesTS))-loss1
-  
   # split excess loss
   mu <- 0
-  DifflossP <- apply(Diffloss, 1:2, function(x) max(c(0, x-mu)))
-  DifflossM <- apply(Diffloss, 1:2, function(x) max(c(0, mu-x)))
+  Excessloss1P <- apply(Excessloss1, 1:2, function(x) max(c(0, x-mu)))
+  Excessloss1M <- apply(Excessloss1, 1:2, function(x) max(c(0, mu-x)))
+  Excessloss2P <- apply(Excessloss2, 1:2, function(x) max(c(0, x-mu)))
+  Excessloss2M <- apply(Excessloss2, 1:2, function(x) max(c(0, mu-x)))
+  # only for stats
+  ExL1 <- mean(Excessloss1)
+  ExL2 <- mean(Excessloss2)
+  ExL1_0rate <- as.vector(table(Excessloss1)['0'])/nhalf/NMC
+  ExL2_0rate <- as.vector(table(Excessloss2)['0'])/nhalf/NMC
   
   # compute complexity term
-  KL <- 0.5*COMP(ERMfull = ERMs[,3],
-                   ERM1 = ERMs[,2],
-                   ERM2 = ERMs[,1],
-                   sigma2 = sigma2)
-  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
+  ## 1. Informed Prior with 2sqrt(n)
+  #KL <- 0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
+  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
+  ## 2. Informed Prior without 2sqrt(n)
+  #KL <- 0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
+  #RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf
+  ## 3. NO Informed Prior with 2sqrt(n)
+  ratio <- initsigma2/(sigma2)
+  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
+  RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf
+  ## 4. NO Informed Prior without 2sqrt(n)
+  #ratio <- initsigma2/(sigma2)
+  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
+  #RHS <- (KL + log(1/Ndelta))/nhalf
   
   # compute Plus Term
-  PlusLHS <- mean(DifflossP)/(b-mu)
+  ExL1P <- mean(Excessloss1P)
+  ExL2P <- mean(Excessloss2P)
+  PlusLHS <- (0.5*ExL1P+0.5*ExL2P)/(b-mu)
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
   
   # compute Minus Term
-  MinusLHS <- mean(DifflossM)/(mu-a)
+  ExL1M <- mean(Excessloss1M)
+  ExL2M <- mean(Excessloss2M)
+  MinusLHS <- (0.5*ExL1M+0.5*ExL2M)/(mu-a)
   MinusTerm <- kl_inv_inf(MinusLHS, RHS)
   
   # compute reference term
-  RefTerm1 <- bin_inv_sup(nhalf, nhalf*mean(loss1), Ndelta)
-  RefTerm2 <- bin_inv_sup(nhalf, nhalf*mean(loss2), Ndelta)
+  RefL1 <- mean(Refloss1)
+  RefL2 <- mean(Refloss2)
+  RefTerm1 <- bin_inv_sup(nhalf, nhalf*RefL1, Ndelta)
+  RefTerm2 <- bin_inv_sup(nhalf, nhalf*RefL2, Ndelta)
   
-  val <- mu + (1-mu)*PlusTerm + (mu+1)*MinusTerm + 0.5*(RefTerm1+RefTerm2)
-  return(list(val=val, KL=KL, Term1=PlusTerm, Term2=MinusTerm, RefTerm1=RefTerm1, RefTerm2=RefTerm2,
-              ExL1=mean(Diffloss[(ntrain/2+1):ntrain,]), ExL2=mean(Diffloss[1:(ntrain/2),]), RefL1=mean(loss1), RefL2=mean(loss2),
-              ExL1P=mean(DifflossP[(ntrain/2+1):ntrain,]), ExL1M=mean(DifflossM[(ntrain/2+1):ntrain,]), ExL2P=mean(DifflossP[1:(ntrain/2),]), ExL2M=mean(DifflossM[1:(ntrain/2),])))
+  ExTerm <- mu + (b-mu)*PlusTerm - (mu-a)*MinusTerm 
+  ExTerm <- min(c(b, ExTerm))
+  val <- ExTerm + 0.5*(RefTerm1+RefTerm2)
+  
+  return(list(val=val,KL=KL, Term1=0, Term2=0, ExTerm1=PlusTerm, ExTerm2=MinusTerm, RefTerm1=RefTerm1, RefTerm2=RefTerm2,
+              L1=0, L2=0, ExL1=ExL1, ExL2=ExL2, RefL1=RefL1, RefL2=RefL2, ExL1_0rate=ExL1_0rate, ExL2_0rate=ExL2_0rate,
+              L1P=0, L1M=0, L2P=0, L2M=0, ExL1P=ExL1P, ExL1M=ExL1M, ExL2P=ExL2P, ExL2M=ExL2M, muOpt=mu))
 }

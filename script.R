@@ -1,8 +1,7 @@
 ######################################################################
 ## R script for computing bounds                                    ##
-## Preprint: PAC-Bayes Un-Expected Bernstein Inequality             ##
-## URL: https://arxiv.org/abs/1905.13367		            ##
-## Authors (alphabetical order): Benjamin Guedj & Zakaria Mhammedi  ## 
+## Paper: Split-kl and PAC-Bayes-split-kl Inequality                ##
+## NeurIPS 2022 submission: 2345                                    ##
 ######################################################################
 
 rm(list=ls())
@@ -11,23 +10,23 @@ library(tictoc)
 library(lamW)
 library(Matrix)
 library(pracma)
+library(dplyr)
+library(tidyr)
 library(stringr)
 library(caret)
 library(R.matlab)
-
 par(mfrow=c(1,1))
 path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
 
 ## Experimental setup
 set.seed(123)
-data_option = "adults"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
-                                  # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "mushroom", "adults"
+data_option = "breast-cancer"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
+                                  # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "svmguide1", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
 lambda <- 0.01                    # Regularization for the logistic regression
                       
 initsigma2 <- 0.5                 # Prior variance for the Gaussian-ERM distribution 
-boundtype <- "FWEL"
 
 ## following block is only relevant for synthetic data
 nb.seq <- 10
@@ -60,13 +59,14 @@ source(paste(path, "PACBayes-Skl.R", sep="/"))
 str <- paste(c(data_option),collapse='-')
 
 # Initializing 
-nbRepet <- 5
+nbRepet <- 1
 bound <- array(dim = c(nbRepet,3,nb.seq), data = Inf)
-Lntrain <- Lntest <- bestSigma2 <- array(dim = c(nbRepet,3,nb.seq), data = NA) #posterior
+Lntrain <- Lntest <- bestSigma2 <- KL <- array(dim = c(nbRepet,3,nb.seq), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet, nb.seq), data = NA) # center
 Term1 <- Term2 <- ExTerm1 <- ExTerm2 <- RefTerm1 <- RefTerm2 <- array(dim = c(nbRepet,3,nb.seq), data = NA)
 L1 <- L2 <- ExL1 <- ExL2 <- RefL1 <- RefL2 <- ExL1_0rate <- ExL2_0rate <- array(dim = c(nbRepet,3,nb.seq), data = NA)
-L1P <- L1M <- L2P <- L2M <- ExL1P <- ExL1M <- ExL2P <- ExL2M <- muOpt <- array(dim = c(nbRepet, nb.seq), data = NA) # for Skl
+VnTermExL <- LinTermExL <- array(dim = c(nbRepet, nb.seq), data = NA) # for PBUB
+L1P <- L1M <- L2P <- L2M <- ExL1P <- ExL1M <- ExL2P <- ExL2M <- muOpt <- etaOpt1 <- etaOpt2 <- array(dim = c(nbRepet, nb.seq), data = NA) # for Skl
 
 pb <- txtProgressBar(min = 0, max = nb.seq, style = 3)
 for(inb in 1:nb.seq){
@@ -124,8 +124,7 @@ for(inb in 1:nb.seq){
       Excessloss2 <- loss(Ytrain[1:(ntrain/2)],predictor(Xtrain[1:(ntrain/2),],theta_samplesTS))-Refloss2
 
       ## Maurer bound
-      tmpBkl <- PBkl_FWEL(NMC, sigma2)
-      #ifelse(IF,tmpBKL<- boundPBKL_half(NMC, sigma2),tmpBKL<-boundPBKL(NMC, sigma2))
+      tmpBkl <- PBkl_Avg(NMC, sigma2)
       if(tmpBkl$val < bound[irepet,1,inb]){
         bound[irepet,1,inb] <-  tmpBkl$val
         Term1[irepet,1,inb] <-  tmpBkl$Term1
@@ -142,12 +141,12 @@ for(inb in 1:nb.seq){
         ExL2_0rate[irepet,1,inb] <- tmpBkl$ExL2_0rate
         RefL1[irepet,1,inb] <-  tmpBkl$RefL1
         RefL2[irepet,1,inb] <-  tmpBkl$RefL2
+        KL[irepet,1,inb] <- tmpBkl$KL
         bestSigma2[irepet,1,inb] <- sigma2
       }
       
       ## MGG bound 
-      #ifelse(IF,tmpBMGG<- boundMGG_half(NMC,sigma2),tmpBMGG<-boundMGG(NMC,sigma2))
-      tmpBMGG <- MGG_FWEL(NMC,sigma2)
+      tmpBMGG <- MGG_AvgEx(NMC,sigma2)
       if(tmpBMGG$val < bound[irepet,2,inb]){
         bound[irepet,2,inb] <- tmpBMGG$val
         Term1[irepet,2,inb] <-  tmpBMGG$Term1
@@ -164,12 +163,16 @@ for(inb in 1:nb.seq){
         ExL2_0rate[irepet,2,inb] <- tmpBMGG$ExL2_0rate
         RefL1[irepet,2,inb] <-  tmpBMGG$RefL1
         RefL2[irepet,2,inb] <-  tmpBMGG$RefL2
+        KL[irepet,2,inb] <- tmpBMGG$KL
+        VnTermExL[irepet,inb] <- tmpBMGG$VnTermExL
+        LinTermExL[irepet,inb] <- tmpBMGG$LinTermExL
         bestSigma2[irepet,2,inb] <- sigma2
+        etaOpt1[irepet,inb] <- tmpBMGG$etaOpt1
+        etaOpt2[irepet,inb] <- tmpBMGG$etaOpt2
       }
       
       ## Split-kl bound
-      #ifelse(IF, tmpBSkl <-boundSkl_IF(NMC, sigma2), tmpBSkl <-boundSkl(NMC, sigma2))
-      tmpBSkl <- PBSkl_FWEL(NMC, sigma2)
+      tmpBSkl <- PBSkl_AvgEx(NMC, sigma2)
       if(tmpBSkl$val < bound[irepet,3,inb]){
         bound[irepet,3,inb] <-  tmpBSkl$val
         Term1[irepet,3,inb] <-  tmpBSkl$Term1
@@ -194,6 +197,7 @@ for(inb in 1:nb.seq){
         ExL1M[irepet,inb] <- tmpBSkl$ExL1M
         ExL2P[irepet,inb] <- tmpBSkl$ExL2P
         ExL2M[irepet,inb] <- tmpBSkl$ExL2M
+        KL[irepet,3,inb] <- tmpBSkl$KL
         bestSigma2[irepet,3,inb] <- sigma2
         muOpt[irepet,inb] <- tmpBSkl$muOpt
       }
@@ -229,8 +233,13 @@ for(inb in 1:nb.seq){
     ExL1M <- ExL1M[,1]
     ExL2P <- ExL2P[,1]
     ExL2M <- ExL2M[,1]
+    VnTermExL <- VnTermExL[,1]
+    LinTermExL <- LinTermExL[,1]
     bestSigma2 <- bestSigma2[,,1]
+    KL <- KL[,,1]
     muOpt <- muOpt[,1]
+    etaOpt1 <- etaOpt1[,1]
+    etaOpt2 <- etaOpt2[,1]
     LnERMtrain <- LnERMtrain[,1]
     LnERMtest <- LnERMtest[,1]
     Lntrain <- Lntrain[,,1]
@@ -241,17 +250,19 @@ for(inb in 1:nb.seq){
 str <- paste(c(str,d),collapse="-")
 
 if(!grepl("synthetic",data_option, fixed=TRUE)){
-  Table <- data.frame(LnERMtrain,LnERMtest,Lntrain,Lntest,bestSigma2,bound,
+  Table <- data.frame(LnERMtrain,LnERMtest,Lntrain,Lntest,bestSigma2,bound,KL,
                       L1, Term1, L2, Term2,
                       ExL1,ExTerm1,ExL2,ExTerm2,ExL1_0rate,ExL2_0rate,
                       RefL1,RefTerm1,RefL2,RefTerm2,
                       L1P,L1M,L2P,L2M,
-                      ExL1P,ExL1M,ExL2P,ExL2M,muOpt)
+                      ExL1P,ExL1M,ExL2P,ExL2M,VnTermExL,LinTermExL,
+                      muOpt,etaOpt1,etaOpt2)
   colnames(Table) <- c("LnERMtrain","LnERMtest",
                        "Lntrain_PBkl","Lntrain_MGG","Lntrain_Skl",
                        "Lntest_PBkl","Lntest_MGG","Lntest_Skl",
                        "bestSigma2_PBkl","bestSigma2_MGG","bestSigma2_Skl",
                        "bound_PBkl","bound_MGG","bound_Skl",
+                       "KL_PBkl","KL_MGG","KL_Skl",
                        "L1_PBkl","L1_MGG","L1_Skl",
                        "Term1_PBkl","Term1_MGG","Term1_Skl",
                        "L2_PBkl","L2_MGG","L2_Skl",
@@ -267,12 +278,14 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
                        "RefL2_PBkl","RefL2_MGG","RefL2_Skl",
                        "RefTerm2_PBkl","RefTerm2_MGG","RefTerm2_Skl",
                        "L1P","L1M","L2P","L2M",
-                       "ExL1P","ExL1M","ExL2P","ExL2M","muOpt")
+                       "ExL1P","ExL1M","ExL2P","ExL2M",
+                       "VnTermExL","LinTermExL",
+                       "muOpt","etaOpt1","etaOpt2")
   print(Table)
   
   # write
   if(!dir.exists("out")){dir.create(file.path(path,"out"), showWarnings=F)}
-  outpath <- paste(c(path,"\\out\\",data_option,"-",boundtype,".csv"),collapse="")
+  outpath <- paste(c(path,"\\out\\",data_option,"-Avg.csv"),collapse="")
   write.csv(Table,outpath, row.names=FALSE)
 }
 
@@ -309,3 +322,4 @@ if(!grepl("synthetic",data_option, fixed=TRUE)){
 
 
   
+

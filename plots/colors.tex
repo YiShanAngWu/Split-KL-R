@@ -8,7 +8,17 @@
 \usepackage{multirow}
 
 \usepackage{xcolor}
-%\definecolor{colPBkl}{rgb}{0.2, 0.6, 0.2}
+\definecolor{colMVRisk}{rgb}{0,0,0}
+\definecolor{colPBkl}{rgb}{0.2, 0.6, 0.2}
+%\definecolor{colC1}{rgb}{1,0,0}
+%\definecolor{colC2}{rgb}{1,0.5,0}
+%\definecolor{colCTD}{rgb}{0.1,0.1,0.1}
+%\definecolor{colMV}{rgb}{0,0,1}
+%\definecolor{colMVu}{rgb}{0,0.5,1}
+\definecolor{colRisk}{rgb}{0,0,0}
+\definecolor{colPBkl}{rgb}{0.2, 0.6, 0.2}
+\definecolor{colPBUB}{rgb}{1,0,0}
+\definecolor{colPBSkl}{rgb}{0,0,1}
 
 \DeclareMathOperator{\trainset}{T}
 \DeclareMathOperator{\oobset}{S}
@@ -16,12 +26,17 @@
 
 \newcommand{\lrs}[1]{\left [#1 \right]}
 \DeclareMathOperator{\MV}{MV}
+\DeclareMathOperator{\KL}{KL}
 \newcommand{\dataset}[1]{\textsc{#1}}
 \NewDocumentCommand{\E}{o}{\mathbb E\IfValueT{#1}{\lrs{#1}}}
 \newcommand{\B}{\operatorname{B}}
+%\NewDocumentCommand{\1}{o}{\mathds 1{\IfValueT{#1}{\lr{#1}}}}
 
 \newcommand{\PBkl}{\operatorname{PBkl}}
-\newcommand{\MGG}{\operatorname{MGG}}
-\newcommand{\Skl}{\operatorname{Skl}}
+\newcommand{\PBUB}{\operatorname{PBUB}}
+\newcommand{\PBSkl}{\operatorname{PBSkl}}
+\newcommand{\Avg}{\operatorname{Avg}}
 \newcommand{\FW}{\operatorname{FW}}
 \newcommand{\FWEL}{\operatorname{FWEL}}
+\newcommand{\Ex}{\operatorname{Ex}}
+

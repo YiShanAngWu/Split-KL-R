@@ -90,6 +90,31 @@ gendata <- function(option){
     XY[,d+1] <- str_replace_all(XY[,d+1],c("positive" = "1", "negative" = "0"))
     XY <- apply(XY, 2, as.numeric)
   }
+  else if(strcmpi(data_option,"svmguide1")){
+    d <- 4
+    df <- read.table(paste(path,"UCI Data sets/svmguide1.data",sep="/"), header = FALSE, sep="")
+    df <- df %>% relocate((1), .after = (d+1))
+    for(i in 1:d){
+      df <- separate(df, (i), c(NA, toString(i)), sep=":")
+    }
+    names(df) <- NULL
+    XY <- as.matrix(df)
+    XY <- apply(XY, 2, as.numeric)
+    print(c("Effective dimension=",d))
+  }
+  else if(strcmpi(data_option,"splice")){
+    d <- 60
+    df <- read.table(paste(path,"UCI Data sets/splice.data",sep="/"), header = FALSE, sep="")
+    df <- df %>% relocate((1), .after = (d+1))
+    for(i in 1:d){
+      df <- separate(df, (i), c(NA, toString(i)), sep=":")
+    }
+    names(df) <- NULL
+    XY <- as.matrix(df)
+    XY[,d+1] <- str_replace_all(XY[,d+1],c("+1" = "1", "-1" = "0"))
+    XY <- apply(XY, 2, as.numeric)
+    print(c("Effective dimension=",d))
+  }
   else{
     stop("Error: data option unsupported")
   }
