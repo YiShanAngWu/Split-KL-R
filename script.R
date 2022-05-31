@@ -52,9 +52,9 @@ predictor <- function(x,theta) round(1/(1+exp(-x%*%theta)))
 ## End of Experimental Setup
 source(paste(path, "gen-data.R", sep="/"))
 source(paste(path, "utils.R", sep="/"))
-source(paste(path, "PACBayes-kl.R", sep="/"))
-source(paste(path, "PACBayes-MGG.R", sep="/"))
-source(paste(path, "PACBayes-Skl.R", sep="/"))
+source(paste(path, "PBkl.R", sep="/"))
+source(paste(path, "PBUB.R", sep="/"))
+source(paste(path, "PBSkl.R", sep="/"))
 #str <- paste(c(data_option,"imformedPrior",IF),collapse='-')
 str <- paste(c(data_option),collapse='-')
 
