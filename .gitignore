@@ -116,6 +116,8 @@ out/*
 # Plots
 plots/figure/datasets
 plots/figure/datasets/*
+simulation/plots
+simulation/plots/*
 *.pdf
 
 # Tables
