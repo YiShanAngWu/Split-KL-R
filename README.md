@@ -1,9 +1,7 @@
 # Split-kl and PAC-Bayes-Split-kl Inequalities
 This repository contains the code needed to replicate the experiments:
-- Numerical studies of split-kl in Sec. 2.3 and Appendix D in the preprint [1].
+- Numerical studies of split-kl in Sec. 2.3 and Appendix D in the preprint [1]. The details are provided under the repository `simulation/`.
 - Empirical studies of PAC-Bayes-split-kl on linear classifiers in Sec. 4.1 in the preprint [1].
-
-The details on numerical studies of split-kl are provided in `simulation/`.
 
 ## Experiment Environment
 The implementation of PAC-Bayes-split-kl on linear classifiers is in R, and is tested in Windows.
