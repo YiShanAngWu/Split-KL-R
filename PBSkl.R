@@ -1,7 +1,7 @@
 # PAC-Bayes Split-kl bound
 
 ## Vanilla
-### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL
+### r.v.\in[0,1]. Set mu=0, and the result is the same as PBkl.
 PBSkl <- function(NMC, sigma2){
   # compute loss
   Lnloss <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
@@ -38,8 +38,8 @@ PBSkl <- function(NMC, sigma2){
               L1P=mean(LnlossP), L1M=mean(LnlossM), L2P=0, L2M=0, ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
-## Forward
-### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL_half
+## Forward Informed Prior
+### r.v.\in[0,1]. Set mu=0, and the result is the same as PBkl_FW.
 PBSkl_FW <- function(NMC, sigma2){
   nhalf <- ntrain/2
   
@@ -75,8 +75,8 @@ PBSkl_FW <- function(NMC, sigma2){
               L1P=mean(Loss1P), L1M=mean(Loss1M), L2P=0, L2M=0, ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
-## Backward
-### r.v.\in[0,1]. Doesn't make sense to set \mu=1/2, but if \mu=0, the result is the same as boundPBKL_half
+## Backward Informed Prior
+### r.v.\in[0,1]. Set mu=0, and the result is the same as PBkl_BW.
 PBSkl_BW <- function(NMC, sigma2){
   nhalf <- ntrain/2
   
@@ -112,7 +112,7 @@ PBSkl_BW <- function(NMC, sigma2){
               L1P=0, L1M=0, L2P=mean(Loss2P), L2M=mean(Loss2M), ExL1P=0, ExL1M=0, ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
-## Forward + Excess
+## Forward Informed Prior + Excess
 PBSkl_FWEL <- function(NMC, sigma2){
   nhalf <- ntrain/2
   Ndelta <- delta/3
@@ -130,15 +130,7 @@ PBSkl_FWEL <- function(NMC, sigma2){
   # compute ExTerm1
   ## compute complexity
   KL <- KLGauss(ERMs[,3], ERMs[,1], sigma2)
-  # Computing the KL 
-  #ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  
-  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
-  RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf # conjecture
-  #RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf # no informed prior
-  #RHS <- (KL + log(1/Ndelta))/nhalf # no informed prior, conjecture
-  
+  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   ## compute Plus Term
   PlusLHS <- mean(Excessloss1P)/(b-mu)
   PlusTerm <- kl_inv_sup(PlusLHS, RHS)
@@ -160,7 +152,7 @@ PBSkl_FWEL <- function(NMC, sigma2){
               L1P=0, L1M=0, L2P=0, L2M=0, ExL1P=mean(Excessloss1P), ExL1M=mean(Excessloss1M), ExL2P=0, ExL2M=0, muOpt=mu))
 }
 
-## Backward + Excess
+## Backward Informed Prior + Excess
 PBSkl_BWEL <- function(NMC, sigma2){
   nhalf <- ntrain/2
   Ndelta <- delta/3
@@ -199,7 +191,7 @@ PBSkl_BWEL <- function(NMC, sigma2){
               L1P=0, L1M=0, L2P=0, L2M=0, ExL1P=0, ExL1M=0, ExL2P=mean(Excessloss2P), ExL2M=mean(Excessloss2M), muOpt=mu))
 }
 
-## Average + Excess
+## Average Informed Prior + Excess
 PBSkl_AvgEx <- function(NMC, sigma2){
   nhalf <- ntrain/2
   Ndelta <- delta/4
@@ -212,6 +204,7 @@ PBSkl_AvgEx <- function(NMC, sigma2){
   Excessloss1M <- apply(Excessloss1, 1:2, function(x) max(c(0, mu-x)))
   Excessloss2P <- apply(Excessloss2, 1:2, function(x) max(c(0, x-mu)))
   Excessloss2M <- apply(Excessloss2, 1:2, function(x) max(c(0, mu-x)))
+  
   # only for stats
   ExL1 <- mean(Excessloss1)
   ExL2 <- mean(Excessloss2)
@@ -219,20 +212,8 @@ PBSkl_AvgEx <- function(NMC, sigma2){
   ExL2_0rate <- as.vector(table(Excessloss2)['0'])/nhalf/NMC
   
   # compute complexity term
-  ## 1. Informed Prior with 2sqrt(n)
-  #KL <- 0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
-  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
-  ## 2. Informed Prior without 2sqrt(n)
-  #KL <- 0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
-  #RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf
-  ## 3. NO Informed Prior with 2sqrt(n)
-  ratio <- initsigma2/(sigma2)
-  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf
-  ## 4. NO Informed Prior without 2sqrt(n)
-  #ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  #RHS <- (KL + log(1/Ndelta))/nhalf
+  KL <- 0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
+  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   
   # compute Plus Term
   ExL1P <- mean(Excessloss1P)
