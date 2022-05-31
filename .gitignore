@@ -117,8 +117,8 @@ out/*
 *.pdf
 
 # Tables
-plots/table
-plots/table/*
+table
+table/*
 
 # png Plots
 *.png
