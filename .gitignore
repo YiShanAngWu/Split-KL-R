@@ -122,7 +122,3 @@ plots/table/*
 
 # png Plots
 *.png
-
-# irrelevent
-plot_synthetic.m
-PACBayes-Others.R
