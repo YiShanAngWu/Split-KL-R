@@ -1,37 +1,6 @@
+# PAC-Bayes un-expected Bernstein bound
+
 # Helpers
-buildERMsequenceFast <- function(eps = 1e-16){
-  ERMsequence <- matrix(nrow = d, ncol = 3, data = 0)
-  for(ii in c(1,2,3))   ## change here for the fast version
-  {
-    if(ii==1) {setPoints <- 1:(ntrain/2)}        ## ERM on first half
-    if(ii==2) {setPoints <- (ntrain/2+1):ntrain} ## ERM on second half
-    if(ii==3) {setPoints <- 1:ntrain}            ## ERM on full sample
-    
-    ## Definining the objective and the corresponding gradient
-    fn <- function(theta){
-      X <- Xtrain[setPoints,]
-      Y <- Ytrain[setPoints]
-      Z <-  as.numeric(X%*%theta)
-      return(-mean(Y*log(sigmoid(Z))+(1-Y)*log(1-sigmoid(Z))) +lambda*dot(theta,theta)/2)
-    }
-    gr <- function(theta){
-      X <- Xtrain[setPoints,]
-      Y <- Ytrain[setPoints]
-      Z <- as.numeric(X%*%theta)
-      return(-as.numeric((Y-sigmoid(Z))%*%X/length(setPoints)) + lambda*theta)
-    }
-    par <- numeric(d)
-    ERMsequence[,ii] <- optim(par, fn, gr = gr, method = "BFGS", hessian = TRUE)$par
-  }
-  return(ERMsequence)
-}
-
-computeExpectation <- function(ERMfull,NMC, sigma2){
-  #theta_samples <- get_sample(type = distribution, mean=ERMfull, variance2=sigma2, n_samples=NMC)
-  result <- loss(Ytrain,predictor(Xtrain,theta_samplesTS))
-  return(mean(result))
-}
-
 OptimEtaEmpV <- function(etaGrid, Vn, KL, n, Ndelta){
   etaGridSize <- length(etaGrid)
   result <- numeric(etaGridSize)
@@ -48,10 +17,9 @@ OptimEtaEmpV <- function(etaGrid, Vn, KL, n, Ndelta){
   return(list(val=val,VnTerm=VnTerm,LinTerm=LinTerm,etaOpt=argmin))
 }
 
-# PAC-Bayes un-expected Bernstein bound
-
 ## vanilla
 MGG <- function(NMC, sigma2){
+  b <- 1
   Ndelta <- delta
   # compute empirical loss & the variance
   Ln <- mean(loss(Ytrain,predictor(Xtrain,theta_samplesTS)))
@@ -83,8 +51,9 @@ MGG <- function(NMC, sigma2){
               L1=Ln, L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,etaOpt1=etaOpt,etaOpt2=Inf))
 }
 
-## Forward
+## Forward Informed Prior
 MGG_FW <- function(NMC, sigma2){
+  b <- 1
   nhalf <- ntrain/2
   Ndelta <- delta
   
@@ -117,8 +86,9 @@ MGG_FW <- function(NMC, sigma2){
               L1=L1, L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,etaOpt1=etaOpt,etaOpt2=Inf))
 }
 
-## Backward
+## Backward Informed Prior
 MGG_BW <- function(NMC, sigma2){
+  b <- 1
   nhalf <- ntrain/2
   Ndelta <- delta
   
@@ -151,8 +121,9 @@ MGG_BW <- function(NMC, sigma2){
               L1=0, L2=L2, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0,etaOpt1=etaOpt,etaOpt2=Inf))
 }
 
-## Forward + Excess
+## Forward Informed Prior + Excess
 MGG_FWEL <- function(NMC, sigma2){
+  b <- 1
   nhalf <- ntrain/2
   Ndelta <- delta/2 # for Term1 and RefTerm1
 

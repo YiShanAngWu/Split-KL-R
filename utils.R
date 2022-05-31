@@ -1,4 +1,12 @@
 ## Helper functions
+loss <- function(a,b){
+  return(abs(a-b))
+}
+
+predictor <- function(x,theta){
+  return(round(1/(1+exp(-x%*%theta))))
+}
+
 square_diff <- function(a,b){
   return((a-b)^2)
 }
@@ -53,5 +61,32 @@ bin_inv_sup <- function(n, k, delta){
 
 get_sample <- function(type, mean, variance2, n_samples=1){
   return(t(mvrnorm(n = n_samples, mu = mean, Sigma = variance2*diag(d))))
+}
+
+buildERMsequenceFast <- function(eps = 1e-16){
+  ERMsequence <- matrix(nrow = d, ncol = 3, data = 0)
+  for(ii in c(1,2,3))   ## change here for the fast version
+  {
+    if(ii==1) {setPoints <- 1:(ntrain/2)}        ## ERM on first half
+    if(ii==2) {setPoints <- (ntrain/2+1):ntrain} ## ERM on second half
+    if(ii==3) {setPoints <- 1:ntrain}            ## ERM on full sample
+    
+    ## Definining the objective and the corresponding gradient
+    fn <- function(theta){
+      X <- Xtrain[setPoints,]
+      Y <- Ytrain[setPoints]
+      Z <-  as.numeric(X%*%theta)
+      return(-mean(Y*log(sigmoid(Z))+(1-Y)*log(1-sigmoid(Z))) +lambda*dot(theta,theta)/2)
+    }
+    gr <- function(theta){
+      X <- Xtrain[setPoints,]
+      Y <- Ytrain[setPoints]
+      Z <- as.numeric(X%*%theta)
+      return(-as.numeric((Y-sigmoid(Z))%*%X/length(setPoints)) + lambda*theta)
+    }
+    par <- numeric(d)
+    ERMsequence[,ii] <- optim(par, fn, gr = gr, method = "BFGS", hessian = TRUE)$par
+  }
+  return(ERMsequence)
 }
 ## End of helper functions
