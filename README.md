@@ -1,5 +1,5 @@
 # PAC-Bayes-Split-kl Inequality
-This repository contains the code needed to replicate the experiment on linear classifiers in the preprint [1].
+This repository contains the code needed to replicate the experiment on linear classifiers in Sec. 4.1 in the preprint [1].
 
 ## Experiment Environment
 The implementation is in R. The implementation are tested in Windows.
