@@ -14,7 +14,7 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option,"breast-cancer")){
     d <- 9 
-    df <- read.table(paste(path,"UCI Data sets/breast-cancer-wisconsin.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/breast-cancer-wisconsin.data",sep="/"), header = FALSE, sep=",")
     XY <- data.matrix(df)
     # Dicard the first ID column
     XY <- XY[,-1]
@@ -22,19 +22,19 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option,"bank-notes")){
     d <- 4
-    df <- read.table(paste(path,"UCI Data sets/data_banknote_authentication.txt",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/data_banknote_authentication.txt",sep="/"), header = FALSE, sep=",")
     XY <- data.matrix(df)
     print(c("Effective dimension=",d))
   }
   else if(strcmpi(data_option,"haberman")){
     d <- 3
-    df <- read.table(paste(path,"UCI Data sets/haberman.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/haberman.data",sep="/"), header = FALSE, sep=",")
     XY <- data.matrix(df)
     print(c("Effective dimension=",d))
   }
   else if(strcmpi(data_option,"kr-vs-kp")){
     d <- 36  
-    df <- read.table(paste(path,"UCI Data sets/kr-vs-kp.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/kr-vs-kp.data",sep="/"), header = FALSE, sep=",")
     dmy <-  dummyVars(" ~ .", data = df[,-(d+1)])
     encoded <- data.frame(predict(dmy, newdata = df[,-(d+1)]))
     XY <- cbind(encoded,df[,d+1])
@@ -46,7 +46,7 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option,"mushroom")){
     d <- 22  
-    df <- read.table(paste(path,"UCI Data sets/agaricus-lepiota.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/agaricus-lepiota.data",sep="/"), header = FALSE, sep=",")
     dmy <-  dummyVars(" ~ .", data = df[,-c(1,17)]) 
     encoded <- data.frame(predict(dmy, newdata = df[,-c(1,17)])) # attribute 17 is the "veil type". We remove it because it is the same for all 
     XY <- cbind(encoded,df[,1])
@@ -59,7 +59,7 @@ gendata <- function(option){
   else if(strcmpi(data_option,"adults")){
     d <- 14
     cont <- c(1,3,5,11,12,13,d+1) # Columns with continuous data plus the label column
-    df <- read.table(paste(path,"UCI Data sets/adult-nospaces.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/adult-nospaces.data",sep="/"), header = FALSE, sep=",")
     ind <- which(df == "?", arr.ind=TRUE)
     df <- df[-ind[,1],]
     ind <- which(df == "?", arr.ind=TRUE)
@@ -74,13 +74,13 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option, "spam")){
     d <- 57
-    df <- read.table(paste(path,"UCI Data sets/spambase.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/spambase.data",sep="/"), header = FALSE, sep=",")
     XY <- as.matrix(df)
     print(c("Effective dimension=",d))
   }
   else if(strcmpi(data_option,"tictactoe")){
     d <- 9 
-    df <- read.table(paste(path,"UCI Data sets/tic-tac-toe.data",sep="/"), header = FALSE, sep=",")
+    df <- read.table(paste(path,"Datasets/tic-tac-toe.data",sep="/"), header = FALSE, sep=",")
     dmy <-  dummyVars(" ~ .", data = df[,-(d+1)]) 
     encoded <- data.frame(predict(dmy, newdata = df[,-(d+1)]))
     XY <- cbind(encoded,df[,d+1])
@@ -92,7 +92,7 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option,"svmguide1")){
     d <- 4
-    df <- read.table(paste(path,"UCI Data sets/svmguide1.data",sep="/"), header = FALSE, sep="")
+    df <- read.table(paste(path,"Datasets/svmguide1.data",sep="/"), header = FALSE, sep="")
     df <- df %>% relocate((1), .after = (d+1))
     for(i in 1:d){
       df <- separate(df, (i), c(NA, toString(i)), sep=":")
@@ -104,7 +104,7 @@ gendata <- function(option){
   }
   else if(strcmpi(data_option,"splice")){
     d <- 60
-    df <- read.table(paste(path,"UCI Data sets/splice.data",sep="/"), header = FALSE, sep="")
+    df <- read.table(paste(path,"Datasets/splice.data",sep="/"), header = FALSE, sep="")
     df <- df %>% relocate((1), .after = (d+1))
     for(i in 1:d){
       df <- separate(df, (i), c(NA, toString(i)), sep=":")
