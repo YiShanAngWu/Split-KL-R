@@ -126,7 +126,7 @@ for(irepet in 1:nbRepet){
     }
     
     ## PBUB bound 
-    tmpBPBUB <- MGG_AvgEx(NMC,sigma2)
+    tmpBPBUB <- PBUB_AvgEx(NMC,sigma2)
     if(tmpBPBUB$val < bound[irepet,2]){
       bound[irepet,2] <- tmpBPBUB$val
       Term1[irepet,2] <-  tmpBPBUB$Term1
