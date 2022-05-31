@@ -114,10 +114,15 @@ out
 out/*
 
 # Plots
+plots/figure/datasets
+plots/figure/datasets/
+plots/figure/datasets/*
 *.pdf
 
 # Tables
-table/
+plots/table
+plots/table/
+plots/table/*
 
 # png Plots
 *.png
