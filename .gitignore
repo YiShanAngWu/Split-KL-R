@@ -115,13 +115,10 @@ out/*
 
 # Plots
 *.pdf
-datasets
-datasets/*
-*.aux
 
 # Tables
-*.csv
-*_table.tex
+plots/table
+plots/table/*
 
 # png Plots
 *.png
