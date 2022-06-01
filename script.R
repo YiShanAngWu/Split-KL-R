@@ -19,8 +19,8 @@ path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projec
 
 ## Experimental setup
 set.seed(123)
-data_option = "haberman"          # Options are: "sigmoid-synthetic", "haberman", "breast-cancer", 
-                                  # "tictactoe", "bank-notes", "kr-vs-kp", "spam", "svmguide1", "mushroom", "adults"
+data_option = "adults"          # Options are: "haberman", "breast-cancer", "tictactoe", "bank-notes", 
+                                  # "kr-vs-kp", "spam", "svmguide1", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
 lambda <- 0.01                    # Regularization for the logistic regression
@@ -40,7 +40,7 @@ source(paste(path, "PBSkl.R", sep="/"))
 str <- paste(c(data_option),collapse='-')
 
 ## Initializing 
-nbRepet <- 2
+nbRepet <- 20
 bound <- array(dim = c(nbRepet,3), data = Inf)
 Lntrain <- Lntest <- bestSigma2 <- KL <- array(dim = c(nbRepet,3), data = NA) #posterior
 LnERMtrain <- LnERMtest <- array(dim = c(nbRepet), data = NA) # center

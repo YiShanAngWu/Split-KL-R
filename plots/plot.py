@@ -29,7 +29,7 @@ def multi_bounds():
         os.makedirs(path)
 
     for ds in DATASETS.keys():
-        df = pd.read_csv(EXP_PATH+ds+"-"+"Avg-Ex-IP.csv",sep=",")
+        df = pd.read_csv(EXP_PATH+ds+"-"+"Avg.csv",sep=",")
         df_mean, df_std = df.mean(), df.std()
         bounds = ["PBkl", "PBUB", "PBSkl"]
         with open(path+ds+".tex", "w") as f:

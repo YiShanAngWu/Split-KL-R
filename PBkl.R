@@ -22,22 +22,10 @@ PBkl_FW <- function(NMC, sigma2){
   L1 <- mean(Loss1)
   
   # Computing the KL
-  ## 1. Informed Prior with 2sqrt(n)
-  #KL <-  KLGauss(ERMs[,3],ERMs[,1], sigma2)
-  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
-  ## 2. Informed Prior without 2sqrt(n)
   KL <-  KLGauss(ERMs[,3],ERMs[,1], sigma2)
-  RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf
-  ## 3. NO Informed Prior with 2sqrt(n)
-  #ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  #RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf
-  ## 4. NO Informed Prior without 2sqrt(n)
-  #ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  #RHS <- (KL + log(1/Ndelta))/nhalf
-  
+  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   val <- kl_inv_sup(L1, RHS)
+  
   return(list(val=val,KL=KL, Term1=val, Term2=0, ExTerm1=0, ExTerm2=0, RefTerm1=0, RefTerm2=0,
               L1=L1, L2=0, ExL1=0, ExL2=0, RefL1=0, RefL2=0, ExL1_0rate=0, ExL2_0rate=0))
 }
@@ -46,11 +34,10 @@ PBkl_FW <- function(NMC, sigma2){
 PBkl_BW <- function(NMC, sigma2){
   nhalf <- ntrain/2
   Ndelta <- delta
-
   L2 <- mean(Loss2)
+  
   # Computing the KL (KL(rho, pi_S2))
   KL <-  KLGauss(ERMs[,3],ERMs[,2], sigma2)
-  
   RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   val <- kl_inv_sup(L2, RHS)
   
@@ -67,21 +54,8 @@ PBkl_Avg <- function(NMC, sigma2){
   L2 <- mean(Loss2)
 
   # Computing the KL
-  ## 1. Informed Prior with 2sqrt(n)
-  #KL <-  0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
-  #RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
-  ## 2. Informed Prior without 2sqrt(n)
-  #KL <-  0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
-  #RHS <- (KL + log(sigma2GridSize/Ndelta))/nhalf
-  ## 3. NO Informed Prior with 2sqrt(n)
-  ratio <- initsigma2/(sigma2)
-  KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  RHS <- (KL + log(2*sqrt(nhalf)/Ndelta))/nhalf
-  ## 4. NO Informed Prior without 2sqrt(n)
-  #ratio <- initsigma2/(sigma2)
-  #KL <- d/2 * log(ratio) + d/2*(1/ratio-1) + (1/(2*initsigma2))*dot(ERMs[,3],ERMs[,3])
-  #RHS <- (KL + log(1/Ndelta))/nhalf
-
+  KL <-  0.5*(KLGauss(ERMs[,3],ERMs[,1], sigma2) + KLGauss(ERMs[,3],ERMs[,2], sigma2))
+  RHS <- (KL + log(2*sigma2GridSize*sqrt(nhalf)/Ndelta))/nhalf
   val <- kl_inv_sup(0.5*(L1+L2), RHS)
   
   return(list(val=val,KL=KL, Term1=val, Term2=0,  ExTerm1=0, ExTerm2=0, RefTerm1=0, RefTerm2=0,
