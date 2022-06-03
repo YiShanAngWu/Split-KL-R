@@ -15,11 +15,11 @@ library(stringr)
 library(caret)
 library(R.matlab)
 par(mfrow=c(1,1))
-path <- "C:\\Users\\lrc379\\OneDrive - University of Copenhagen\\Desktop\\Projects\\PAC-Bayes\\PAC-Bayes-ShiftedKL\\Split-KL-R"
+path <- "C:\\Users\\"
 
 ## Experimental setup
 set.seed(123)
-data_option = "adults"          # Options are: "haberman", "breast-cancer", "tictactoe", "bank-notes", 
+data_option = "haberman"          # Options are: "haberman", "breast-cancer", "tictactoe", "bank-notes", 
                                   # "kr-vs-kp", "spam", "svmguide1", "mushroom", "adults"
 problem_type = "classification"   # No other problem type is supported currently  
 distribution <- "gaussian"        # No other distribution is supported currently 
